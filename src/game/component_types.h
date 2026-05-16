@@ -4,14 +4,14 @@
 #include <raylib/raylib.h>
 #include "component.h"
 #include "components/sprite.h"
+#include "raylib_allocators.h"
+#include "ui/raylib_ui.h".h"
 
-
-#define POSITION(X)\
-    X(float,x)\
-    X(float,y)
+#define HITBOX(X)\
+    X(Rectangle,rec)
 
 #define COMPONENTS(init)\
-    init(Position, POSITION)\
+    init(Hitbox, HITBOX)\
     init(Sprite, SPRITE)
 
 COMPONENT_HEADER(COMPONENTS)
