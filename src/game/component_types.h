@@ -5,7 +5,7 @@
 #include "component.h"
 #include "components/sprite.h"
 #include "raylib_allocators.h"
-#include "ui/raylib_ui.h".h"
+#include "ui/raylib_ui.h"
 
 #define HITBOX(X)\
     X(Rectangle,rec)

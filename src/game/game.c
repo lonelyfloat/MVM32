@@ -19,10 +19,15 @@ Arena* arena;
 const float acceleration = 100;
 const float maxSpeed = 500;
 const float groundFriction = 0.8;
-const float gravity = 20;
+const float airResistance = 0.7;
+const float gravity = 30;
 const float coyoteTime = 0.1;
 const float jumpBuffer = 0.06;
 const float variableJumpFrac = 0.5;
+const float collisionDampening = 5.0;
+const float terminalYVelo = 1000;
+const float jumpVelo = -750;
+const float cornerTolerance = 15; // # of pixels
 
 Rectangle player = {0, 0, 50, 70};
 Vector2 playerVelo = { 0 };
@@ -33,7 +38,12 @@ bool jumpTrigger = false;
 float coyoteTimer = 0.0;
 float jumpBufferTimer = 0.0;
 
-Rectangle groundTest = {0, 600, 1000, 220};
+#define STATIC_RECS 3
+Rectangle staticRecs[STATIC_RECS] = {
+    {0, 600, 1280, 120},
+    {900, 400, 200, 40},
+    {400, 290, 200, 40}
+};
 // ImGuiContext* ctx;
 
 Entity inspect = NULL_ENTITY;
@@ -68,10 +78,8 @@ void UpdateDrawFrame(void) {
         Save("./assets/game_data"); 
 
     // Begin Player code
-    if(grounded) {
-        playerVelo.y = 0;
-    }
     playerVelo.y += gravity;
+    playerVelo.y = Clamp(playerVelo.y, -terminalYVelo, terminalYVelo);
 
     if(coyoteTimer >= 0) {
         coyoteTimer -= GetFrameTime();
@@ -92,41 +100,74 @@ void UpdateDrawFrame(void) {
         jumpBufferTimer -= GetFrameTime();
         if(canJump) {
             jumpTrigger = true;
-            printf("trigger\n");
             jumpBufferTimer = -1;
         }
     } 
 
     if(jumpTrigger) {
-        playerVelo.y = -600;
+        playerVelo.y = jumpVelo;
         jumpTrigger = false;
     }
 
-    if(IsKeyReleased(KEY_C) && playerVelo.y < 0) {
+    if(IsKeyReleased(KEY_C) && playerVelo.y < -100) {
         playerVelo.y *= variableJumpFrac;
     }
 
     int inputX = IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT);
     playerVelo.x += inputX * acceleration;
     playerVelo.x = Clamp(playerVelo.x, -maxSpeed, maxSpeed);
-    if(grounded) {
-        playerVelo.x *= groundFriction;
+    if(inputX == 0) {
+        if(grounded) {
+            playerVelo.x *= groundFriction;
+        } else {
+            playerVelo.x *= airResistance;
+        }
     }
 
     player.x += playerVelo.x * GetFrameTime();
     player.y += playerVelo.y * GetFrameTime();
 
-    Vector2 impulse = ResolveRectStaticRect(player, groundTest);
-    player.x += impulse.x;
-    player.y += impulse.y;
-    if(Vector2LengthSqr(impulse) > 0.01) {
-        grounded = true;
-        canJump = true;
-    } else {
-        if(grounded) {
-            coyoteTimer = coyoteTime;
+    bool groundChecked = false;
+    for(int i = 0; i < STATIC_RECS; ++i) {
+        Vector2 impulse = ResolveRectStaticRect(player, staticRecs[i]);
+        player.x += impulse.x;
+        player.y += impulse.y;
+        if(impulse.x != 0) {
+            // Top corner rounding
+            if(fabs(staticRecs[i].y - (player.y + player.height)) < cornerTolerance && playerVelo.y > 0) {
+                player.y = staticRecs[i].y - player.height;
+                printf("CORNER\n");
+            }
+            else {
+                playerVelo.x = 0;
+            }
         }
-        grounded = false;
+
+        if(impulse.y != 0) {
+
+            bool cornerLeft = fabs((player.x + player.width) - staticRecs[i].x) < cornerTolerance;
+            bool cornerRight = fabs(player.x - (staticRecs[i].x + staticRecs[i].width)) < cornerTolerance;
+            if(playerVelo.y < 0 && cornerLeft) {
+                    player.x = staticRecs[i].x - player.width;
+            }
+            else if(playerVelo.y < 0 && cornerRight) {
+                    player.x = staticRecs[i].x + staticRecs[i].width;
+            } else {
+                playerVelo.y = 0;
+            }
+        }
+        if(!groundChecked) {
+            if(impulse.y < 0) {
+                grounded = true;
+                groundChecked = true;
+                canJump = true;
+            } else {
+                if(grounded) {
+                    coyoteTimer = coyoteTime;
+                }
+                grounded = false;
+            }
+        }
     }
 
 
@@ -144,6 +185,13 @@ void UpdateDrawFrame(void) {
         ClearBackground(RAYWHITE);
         DrawUI();
         DrawRectangleRec(player, RED);
-        DrawRectangleRec(groundTest, BLUE);
+        for(int i = 0; i < STATIC_RECS; ++i) {
+            DrawRectangleRec(staticRecs[i], BLUE);
+            DrawRectangle(staticRecs[i].x, staticRecs[i].y, cornerTolerance, cornerTolerance, GREEN);
+            DrawRectangle(staticRecs[i].x  + staticRecs[i].width - cornerTolerance, staticRecs[i].y, cornerTolerance, cornerTolerance, GREEN);
+
+            DrawRectangle(staticRecs[i].x, staticRecs[i].y + staticRecs[i].height - cornerTolerance, cornerTolerance, cornerTolerance, PURPLE);
+            DrawRectangle(staticRecs[i].x  + staticRecs[i].width - cornerTolerance, staticRecs[i].y + staticRecs[i].height - cornerTolerance, cornerTolerance, cornerTolerance, PURPLE);
+        }
     EndDrawing();
 }
