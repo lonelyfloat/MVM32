@@ -24,6 +24,7 @@ void _Allocate_##type(Arena* arena, void* value) {\
 }\
 
 _ALLOCATOR_HEADER(int)
+_ALLOCATOR_HEADER(bool)
 _ALLOCATOR_HEADER(float)
 
 #endif

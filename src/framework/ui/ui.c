@@ -24,7 +24,7 @@ void InitUI() {
     }
     ImGui_StyleColorsDark(NULL);
     ImGuiStyle* style = ImGui_GetStyle();
-    style->FontScaleDpi = 1.5;
+    style->FontScaleDpi = 1.0;
 
     ImGui_ImplRaylib_Init();
 

@@ -41,7 +41,7 @@ const float maxTextureSize = 200;
 
 void _UI_TextureAsset(char* name, void* value) {
     TextureAsset* asset = value;
-    bool noKey = asset->key == NULL;
+    bool noKey = asset->key == NULL || asset->length <= 0;
     Texture2D* tex;
     float texWidth = 1.0;
     if(!noKey) {

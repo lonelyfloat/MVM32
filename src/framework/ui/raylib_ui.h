@@ -6,5 +6,6 @@
 
 UI_GEN_HEADER(Vector2);
 UI_GEN_HEADER(Rectangle);
+UI_GEN_HEADER(Color);
 
 #endif

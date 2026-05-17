@@ -17,3 +17,11 @@ void _UI_int(char* name, void* value) {
     sprintf(buf, "##%s", name);
     ImGui_InputInt(buf, value);
 }
+
+void _UI_bool(char* name, void* value) {
+    ImGui_TextUnformatted(name);
+    ImGui_SameLine();
+    char buf[32];
+    sprintf(buf, "##%s", name);
+    ImGui_Checkbox(buf, value);
+}

@@ -1,6 +1,6 @@
 #include <raylib/raylib.h>
+#include <stdint.h>
 #include "ecs.h"
-
 #include "serialize.h"
 
 #define RECT(X)\
@@ -13,10 +13,31 @@
     X(float, x)\
     X(float, y)
 
+#define COLOR(X)\
+    X(uint8_t, r)\
+    X(uint8_t, g)\
+    X(uint8_t, b)\
+    X(uint8_t, a)
+
 SERIALIZE_GEN_PRIM(float, "%f ")
 SERIALIZE_GEN_PRIM(int, "%d ")
+SERIALIZE_GEN_PRIM(uint8_t, "%hd ")
+
+void _Save_bool(FILE* stream, void* value) {
+    bool* bv = value;
+    fprintf(stream,"%d ", *bv ? 1 : 0);
+}
+void _Load_bool(FILE* stream, Arena* arena, void* value) {
+    int d = 0;
+    bool* bv = value;
+    fscanf(stream,"%d ", &d);
+    *bv = d!=0;
+}
+
 SERIALIZE_GEN_(Vector2, VEC2)
 SERIALIZE_GEN_(Rectangle, RECT)
+SERIALIZE_GEN_(Color, COLOR)
+
 
 // Saving and loading ECS from file
 #define _FERR(c, ...) do { if(c) { fprintf(stderr, __VA_ARGS__); return; } } while(0)

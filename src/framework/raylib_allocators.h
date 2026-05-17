@@ -6,5 +6,6 @@
 
 _ALLOCATOR_HEADER(Rectangle)
 _ALLOCATOR_HEADER(Vector2)
+_ALLOCATOR_HEADER(Color)
 
 #endif

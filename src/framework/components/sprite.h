@@ -12,7 +12,8 @@ typedef struct TextureAsset {
 } TextureAsset;
 
 #define SPRITE(X)\
-    X(TextureAsset, texture)
+    X(TextureAsset, texture)\
+    X(bool, flipped)
 
 void _Save_TextureAsset(FILE* stream, void* value);
 void _Load_TextureAsset(FILE* stream, Arena* arena, void* value);

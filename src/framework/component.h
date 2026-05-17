@@ -63,6 +63,10 @@ SERIALIZE_GEN_TAGGED_UNION(T,v)\
 UI_GEN_TAGGED_UNION(T,v)\
 _GEN_COMPONENT_ALLOCATOR(T,v)
 
+#define _GEN_HEADERS_STRUCT_DEFINED(T,v)\
+void Add##T(ECS* ecs, Entity entity, T value);\
+SERIALIZE_GEN_HEADER(T)\
+UI_GEN_COMPONENT_HEADER(T)\
 
 #define _GEN_HEADERS_(T,v)\
 typedef struct T {\
@@ -73,6 +77,17 @@ SERIALIZE_GEN_HEADER(T)\
 UI_GEN_COMPONENT_HEADER(T)\
 
 #define _GEN_COMP_IMPL_(T,v)\
+void Add##T(ECS* ecs, Entity entity, T value) { \
+    ((T*)(ecs->blocks[(_COMPONENT_NAME(v))].components))[ecs->blocks[(_COMPONENT_NAME(v))].count] = value;\
+    ecs->blocks[(_COMPONENT_NAME(v))].entities[ecs->blocks[(_COMPONENT_NAME(v))].count] = entity;\
+    ecs->blocks[(_COMPONENT_NAME(v))].indices[GetID(entity)] = ecs->blocks[(_COMPONENT_NAME(v))].count;\
+    ecs->blocks[(_COMPONENT_NAME(v))].count += 1;\
+}\
+SERIALIZE_GEN_(T,v)\
+UI_GEN_(T,v)\
+_GEN_COMPONENT_ALLOCATOR(T,v)\
+
+#define _GEN_COMP_IMPL_STRUCT_DEFINED(T,v)\
 void Add##T(ECS* ecs, Entity entity, T value) { \
     ((T*)(ecs->blocks[(_COMPONENT_NAME(v))].components))[ecs->blocks[(_COMPONENT_NAME(v))].count] = value;\
     ecs->blocks[(_COMPONENT_NAME(v))].entities[ecs->blocks[(_COMPONENT_NAME(v))].count] = entity;\
