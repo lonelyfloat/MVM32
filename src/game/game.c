@@ -19,17 +19,6 @@ int screenHeight = 720;
 Arena* arena;
 bool paused = false;
 
-// Test enemy
-// Rectangle enemy = {400, 240, 50, 50};
-// const float enemySpeed = 100;
-// Vector2 enemyVelo = {enemySpeed,0};
-
-// #define STATIC_RECS 3
-// Rectangle staticRecs[STATIC_RECS] = {
-//     {0, 600, 1280, 120},
-//     {900, 436, 200, 40},
-//     {400, 290, 200, 40}
-// };
 // ImGuiContext* ctx;
 
 Entity inspect = NULL_ENTITY;
@@ -96,7 +85,6 @@ void UpdateDrawFrame(void) {
             DebugShape d = IndexComponent(ecs, DebugShape,DEBUG_SHAPE_COMPONENT, i);
             DrawRectangleRec(*h, d.col);
         }
-        // DrawRectangleRec(enemy, PINK);
         DrawUI();
     EndDrawing();
 }
