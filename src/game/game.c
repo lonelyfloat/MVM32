@@ -61,9 +61,9 @@ void UpdateDrawFrame(void) {
     }
     if(!paused) {
         VelocitySystem(ecs);
+        FABRIKSystem(ecs, 50);
         CollisionSystem(ecs);
         PlayerSystem(ecs);
-        FABRIKSystem(ecs, 50);
     }
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L))
         Load("./assets/game_data");

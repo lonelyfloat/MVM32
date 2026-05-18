@@ -28,6 +28,7 @@ typedef Vector2 Velocity;
 
 #define ACTOR(X)\
     X(Vector2,impulse)\
+    X(bool,autoApply)\
 
 #define DEBUG_SHAPE(X)\
     X(Color, col)

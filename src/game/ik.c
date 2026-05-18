@@ -15,7 +15,6 @@ void FABRIKSystem(ECS* ecs, int iterations) {
         Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
         Vector2 originPos = hb->pos;
         Vector2 targetRelative = WorldToEntitySpace(ecs, e, origin.target);
-        printf("%f, %f\n", targetRelative.x, targetRelative.y);
         for(int k = 0; k < iterations; ++k) {
             Entity currentNode = e;
             Entity nextSegment = r->first;
