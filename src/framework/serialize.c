@@ -53,7 +53,7 @@ void LoadEntitiesFromFile(ECS* ecs, Arena* arena, char* filePath) {
     uint32_t entityCount = 0;
     _FERR(fscanf(stream, "%x\n", &entityCount) != 1, "ERROR: %ld: fscanf failed in ECS file %s\n", ftell(stream), filePath);
     while(!feof(stream)) {
-        uint64_t bitmask;
+        uint64_t bitmask = 0;
         int mask = 1;
         _FERR(fscanf(stream, "%lx:", &bitmask) != 1, "ERROR: %ld: fscanf failed in ECS file %s\n", ftell(stream), filePath);
         Entity e = CreateEntity(ecs);

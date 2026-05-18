@@ -1,6 +1,14 @@
 #include "utils.h"
 #include <raylib/raymath.h>
 
+Vector2 RectanglePos(Rectangle r) {
+    return (Vector2){r.x, r.y};
+}
+
+Rectangle ChangeRectanglePos(Rectangle r, Vector2 pt) {
+    return (Rectangle){pt.x, pt.y, r.width, r.height};
+}
+
 Vector2 ResolveRectStaticRect(Rectangle moving, Rectangle st) {
     Vector2 movingCenter = (Vector2){moving.x + (moving.width / 2), moving.y + (moving.height / 2)};
     Vector2 stCenter = (Vector2){st.x + (st.width / 2), st.y + (st.height / 2)};

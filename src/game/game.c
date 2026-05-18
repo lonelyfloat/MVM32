@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "systems.h"
 #include "player.h"
+#include "child.h"
 #include "utils.h"
 #include <string.h>
 
@@ -62,6 +63,7 @@ void UpdateDrawFrame(void) {
         VelocitySystem(ecs);
         CollisionSystem(ecs);
         PlayerSystem(ecs);
+        FABRIKSystem(ecs, 50);
     }
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L))
         Load("./assets/game_data");
@@ -81,9 +83,9 @@ void UpdateDrawFrame(void) {
         for(int i = 0; i < ecs->blocks[DEBUG_SHAPE_COMPONENT].count; ++i) {
             Entity e = GetEntity(ecs, DEBUG_SHAPE_COMPONENT, i);
             if(!HasComponent(ecs, e, HITBOX_COMPONENT)) continue;
-            Hitbox* h = GetComponent(ecs, e, HITBOX_COMPONENT);
+            Hitbox h = GetWorldHitbox(ecs, e);
             DebugShape d = IndexComponent(ecs, DebugShape,DEBUG_SHAPE_COMPONENT, i);
-            DrawRectangleRec(*h, d.col);
+            DrawRectangleV(h.pos, h.scale, d.col);
         }
         DrawUI();
     EndDrawing();

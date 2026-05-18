@@ -31,8 +31,7 @@ void UpdatePlayer(ECS* ecs, Entity e) {
 
     bool groundChecked = false;
     Vector2 impulse = actor->impulse;
-    hb->x += impulse.x;
-    hb->y += impulse.y;
+    hb->pos = Vector2Add(hb->pos, impulse);
     if(impulse.x != 0) {
         velo->x = 0;
     }

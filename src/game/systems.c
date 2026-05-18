@@ -1,4 +1,5 @@
 #include "systems.h"
+#include "child.h"
 #include <raylib/raymath.h>
 #include "utils.h"
 
@@ -7,8 +8,7 @@ void VelocitySystem(ECS* ecs) {
         Entity e = GetEntity(ecs, ACTOR_COMPONENT, i);
         if(!HasComponent(ecs, e, HITBOX_COMPONENT)) continue;
         Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
-        hb->x += IndexComponent(ecs, Velocity, VELOCITY_COMPONENT, i).x * GetFrameTime();
-        hb->y += IndexComponent(ecs, Velocity, VELOCITY_COMPONENT, i).y * GetFrameTime();
+        hb->pos = Vector2Add(hb->pos, Vector2Scale(IndexComponent(ecs, Velocity, VELOCITY_COMPONENT, i), GetFrameTime()));
     }
 }
 
@@ -18,12 +18,13 @@ void CollisionSystem(ECS* ecs) {
         if(!HasComponent(ecs, e, HITBOX_COMPONENT)) continue;
         Actor* impulse = &IndexComponent(ecs, Actor, ACTOR_COMPONENT, i);
         impulse->impulse = Vector2Zero();
-        Hitbox* moving = GetComponent(ecs, e, HITBOX_COMPONENT);
+        Hitbox moving = GetWorldHitbox(ecs, e);
         for(int j = 0; j < ecs->blocks[STATIC_GEOMETRY_COMPONENT].count; ++j) {
             Entity stat = GetEntity(ecs, STATIC_GEOMETRY_COMPONENT, j);
             if(!HasComponent(ecs, stat, HITBOX_COMPONENT)) continue;
-            Hitbox* staticBox = GetComponent(ecs, stat, HITBOX_COMPONENT);
-            impulse->impulse = Vector2Add(impulse->impulse, ResolveRectStaticRect(*moving, *staticBox));
+            Hitbox staticBox = GetWorldHitbox(ecs, stat);
+            impulse->impulse = Vector2Add(impulse->impulse,
+                    ResolveRectStaticRect(HitboxToRect(moving), HitboxToRect(staticBox)));
         }
     }
 }

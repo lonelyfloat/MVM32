@@ -1,13 +1,18 @@
 #ifndef H_UTILS
 #define H_UTILS
 
+#include <raylib/raylib.h>
+
+Vector2 RectanglePos(Rectangle r);
+Rectangle ChangeRectanglePos(Rectangle r, Vector2 pt);
+
 // An extension to raylib's collision functionality that allows static-body collision resolution
 // All return the projection vector
 
-#include <raylib/raylib.h>
 // All of the functions I want:
 
 typedef Vector2 Triangle[3];
+
 
 // Working: 
 Vector2 ResolveRectStaticRect(Rectangle moving, Rectangle st);

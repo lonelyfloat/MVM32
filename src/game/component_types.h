@@ -7,14 +7,12 @@
 #include "components/relationship.h"
 #include "raylib_allocators.h"
 #include "ui/raylib_ui.h"
+#include "ik.h"
 #include "player.h"
 
-typedef Rectangle Hitbox;
 #define HITBOX(X)\
-    X(float, x)\
-    X(float, y)\
-    X(float, width)\
-    X(float, height)\
+    X(Vector2, pos)\
+    X(Vector2, scale)\
 
 typedef Vector2 Velocity;
 #define VELOCITY(X)\
@@ -35,7 +33,7 @@ typedef Vector2 Velocity;
     X(Color, col)
 
 #define COMPONENTS(init)\
-    init(Hitbox, HITBOX, STRUCT_DEFINED)\
+    init(Hitbox, HITBOX)\
     init(Velocity, VELOCITY, STRUCT_DEFINED)\
     init(Sprite, SPRITE)\
     init(Health, HEALTH)\
@@ -43,8 +41,18 @@ typedef Vector2 Velocity;
     init(Player, PLAYER, STRUCT_DEFINED)\
     init(DebugShape, DEBUG_SHAPE)\
     init(StaticGeometry, STATIC_GEOMETRY)\
-    init(Relationship, RELATIONSHIP)
+    init(Relationship, RELATIONSHIP)\
+    init(FabrikNode, FABRIK_NODE)\
+    init(FabrikRoot, FABRIK_ROOT)
 
 COMPONENT_HEADER(COMPONENTS)
+
+static inline Rectangle HitboxToRect(Hitbox hb) {
+    return (Rectangle){hb.pos.x, hb.pos.y, hb.scale.x, hb.scale.y};
+}
+
+static inline Hitbox RectToHitbox(Rectangle r) {
+    return (Hitbox){.pos = {r.x,r.y}, .scale={r.width,r.height}};
+}
 
 #endif
