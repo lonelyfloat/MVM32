@@ -4,6 +4,7 @@
 #include <raylib/raylib.h>
 #include "component.h"
 #include "components/sprite.h"
+#include "components/relationship.h"
 #include "raylib_allocators.h"
 #include "ui/raylib_ui.h"
 #include "player.h"
@@ -42,6 +43,7 @@ typedef Vector2 Velocity;
     init(Player, PLAYER, STRUCT_DEFINED)\
     init(DebugShape, DEBUG_SHAPE)\
     init(StaticGeometry, STATIC_GEOMETRY)\
+    init(Relationship, RELATIONSHIP)
 
 COMPONENT_HEADER(COMPONENTS)
 
