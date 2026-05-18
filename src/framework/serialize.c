@@ -22,6 +22,7 @@
 SERIALIZE_GEN_PRIM(float, "%f ")
 SERIALIZE_GEN_PRIM(int, "%d ")
 SERIALIZE_GEN_PRIM(uint8_t, "%hd ")
+SERIALIZE_GEN_PRIM(Entity, "%u ")
 
 void _Save_bool(FILE* stream, void* value) {
     bool* bv = value;

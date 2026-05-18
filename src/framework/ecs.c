@@ -123,10 +123,10 @@ EntityCount GetEntityAmount(ECS* ecs) {
 
 
 void NukeECS(ECS* ecs) {
-    for(int i = 0; i < ecs->totalEntities; ++i) {
-        if(GetID(ecs->entities[i]) != i) {
-            continue;
-        }
-        KillEntity(ecs,ecs->entities[i]);
+    ecs->destroyed = INVALID_ID;
+    ecs->totalEntities = 0;
+    ecs->available = 0;
+    for(int i = 0; i < ecs->componentCount; ++i) {
+        ecs->blocks[i].count = 0; 
     }
 }

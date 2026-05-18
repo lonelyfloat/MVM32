@@ -56,5 +56,6 @@ void _UI_Component_##T(void* value){ \
 UI_GEN_HEADER(float);
 UI_GEN_HEADER(int);
 UI_GEN_HEADER(bool);
+UI_GEN_HEADER(Entity);
 
 #endif
