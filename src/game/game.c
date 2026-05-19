@@ -10,6 +10,7 @@
 #include "player.h"
 #include "child.h"
 #include "utils.h"
+#include "prefab.h"
 #include <string.h>
 
 ECS* ecs;
@@ -20,7 +21,7 @@ int screenHeight = 720;
 Arena* arena;
 bool paused = false;
 
-// ImGuiContext* ctx;
+ImGuiContext* ctx;
 
 Entity inspect = NULL_ENTITY;
 void Init(Arena* gameArena) {
@@ -31,8 +32,8 @@ void Init(Arena* gameArena) {
     InitAssets(gameArena, 2);
     screenWidth = GetScreenWidth();
     screenHeight = GetScreenHeight();
-    // ctx = GehealthtImGuiContext();
-    // ImGui_SetCurrentContext(ctx);
+    ctx = GetImGuiContext();
+    ImGui_SetCurrentContext(ctx);
 }
 
 void Save(char* file) {
@@ -72,6 +73,16 @@ void UpdateDrawFrame(void) {
 
     BeginUI();
     EntityPanel(arena,ecs, &inspect, IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E));
+    ImGui_Begin("tree test", NULL, ImGuiWindowFlags_None);
+    if(inspect != NULL_ENTITY) {
+        if(ImGui_Button("Tree print")) {
+            SaveEntityTree(ecs, inspect, "./assets/prefabs/entity1");
+        }
+    }
+    if(ImGui_Button("Tree load")) {
+        LoadEntityTree(ecs, arena, "./assets/prefabs/entity1");
+    }
+    ImGui_End();
     EndUI();
 
 
