@@ -4,15 +4,21 @@
 #include <ecs.h>
 #include <raylib/raylib.h>
 
-// Components & systems for FABRIK 'nodes'
+// Components & systems for IK 'nodes'
 
-#define FABRIK_ROOT(X)\
-    X(Vector2, target)\
-    X(float, lengthSum)
+#define IK_ROOT(X)\
+    X(bool, hasTarget)\
+    X(Vector2, target)
 
-#define FABRIK_NODE(X)\
+#define IK_NODE(X)\
     X(float, length)
 
-void FABRIKSystem(ECS* ecs, int iterations);
+void ResolveIK(ECS* ecs);
+
+#define IK_LEG(X)\
+    X(float, xOffset)\
+    X(float, strideLength)
+
+// void IKLegSystem(ECS* ecs, Vector2 groundA, Vector2 groundB);
 
 #endif

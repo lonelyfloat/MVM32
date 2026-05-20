@@ -62,7 +62,9 @@ void UpdateDrawFrame(void) {
     }
     if(!paused) {
         VelocitySystem(ecs);
-        FABRIKSystem(ecs, 50);
+        // IKLegSystem(ecs, (Vector2){0, 620}, (Vector2){1280,620});
+        // FABRIKSystem(ecs, 50);
+        ResolveIK(ecs);
         CollisionSystem(ecs);
         PlayerSystem(ecs);
     }
@@ -73,16 +75,6 @@ void UpdateDrawFrame(void) {
 
     BeginUI();
     EntityPanel(arena,ecs, &inspect, IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E));
-    ImGui_Begin("tree test", NULL, ImGuiWindowFlags_None);
-    if(inspect != NULL_ENTITY) {
-        if(ImGui_Button("Tree print")) {
-            SaveEntityTree(ecs, inspect, "./assets/prefabs/entity1");
-        }
-    }
-    if(ImGui_Button("Tree load")) {
-        LoadEntityTree(ecs, arena, "./assets/prefabs/entity1");
-    }
-    ImGui_End();
     EndUI();
 
 
@@ -94,9 +86,9 @@ void UpdateDrawFrame(void) {
         for(int i = 0; i < ecs->blocks[DEBUG_SHAPE_COMPONENT].count; ++i) {
             Entity e = GetEntity(ecs, DEBUG_SHAPE_COMPONENT, i);
             if(!HasComponent(ecs, e, HITBOX_COMPONENT)) continue;
-            Hitbox h = GetWorldHitbox(ecs, e);
+            Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
             DebugShape d = IndexComponent(ecs, DebugShape,DEBUG_SHAPE_COMPONENT, i);
-            DrawRectangleV(h.pos, h.scale, d.col);
+            DrawRectangleV(hb->pos, hb->scale, d.col);
         }
         DrawUI();
     EndDrawing();

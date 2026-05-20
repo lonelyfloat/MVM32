@@ -3,7 +3,7 @@
 
 #include "component_types.h" 
 
-Hitbox GetWorldHitbox(ECS* ecs, Entity e);
-Vector2 WorldToEntitySpace(ECS* ecs, Entity e,Vector2 pt);
+// Hitbox GetWorldHitbox(ECS* ecs, Entity e);
+// Vector2 WorldToEntitySpace(ECS* ecs, Entity e,Vector2 pt);
 
 #endif

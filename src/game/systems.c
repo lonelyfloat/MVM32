@@ -19,13 +19,12 @@ void CollisionSystem(ECS* ecs) {
         Actor* impulse = &IndexComponent(ecs, Actor, ACTOR_COMPONENT, i);
         impulse->impulse = Vector2Zero();
         Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
-        Hitbox moving = GetWorldHitbox(ecs, e);
         for(int j = 0; j < ecs->blocks[STATIC_GEOMETRY_COMPONENT].count; ++j) {
             Entity stat = GetEntity(ecs, STATIC_GEOMETRY_COMPONENT, j);
             if(!HasComponent(ecs, stat, HITBOX_COMPONENT)) continue;
-            Hitbox staticBox = GetWorldHitbox(ecs, stat);
+            Hitbox* staticHB = GetComponent(ecs, stat, HITBOX_COMPONENT);
             impulse->impulse = Vector2Add(impulse->impulse,
-                    ResolveRectStaticRect(HitboxToRect(moving), HitboxToRect(staticBox)));
+                    ResolveRectStaticRect(HitboxToRect(*hb), HitboxToRect(*staticHB)));
             if(impulse->autoApply) {
                 hb->pos = Vector2Add(hb->pos, impulse->impulse);
             }

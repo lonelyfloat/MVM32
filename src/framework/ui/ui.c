@@ -114,13 +114,10 @@ void EntityPanel(Arena* arena, ECS* ecs, Entity* inspected, bool togglePanel) {
     if(togglePanel) showEntityPanel = !showEntityPanel;
     if(showEntityPanel) {
         float killButtonSpace = ImGui_CalcTextSize("Kill").x +
-                                ImGui_GetStyle()->FramePadding.x * 2.f +
+                                ImGui_GetStyle()->FramePadding.x + 
                                 ImGui_GetStyle()->ItemSpacing.x + 
                                 ImGui_GetStyle()->WindowPadding.x*2;
-        float cloneButtonSpace = ImGui_CalcTextSize("Kill").x +
-                                ImGui_GetStyle()->FramePadding.x * 2.f +
-                                ImGui_GetStyle()->ItemSpacing.x + 
-                                ImGui_GetStyle()->WindowPadding.x*2;
+        float cloneButtonSpace = ImGui_CalcTextSize("Clone").x;
         ImGui_Begin("Entity Panel", &showEntityPanel, ImGuiWindowFlags_NoSavedSettings);
         char buf[100];
         Entity queried = NULL_ENTITY;
@@ -140,7 +137,7 @@ void EntityPanel(Arena* arena, ECS* ecs, Entity* inspected, bool togglePanel) {
                     continue;
                 }
                 if(i == 0) {
-                    ImGui_TableSetupColumnEx("##LeftColumn", ImGuiTableColumnFlags_WidthFixed, region.x-killButtonSpace,0); // Default to 100.0f
+                    ImGui_TableSetupColumnEx("##LeftColumn", ImGuiTableColumnFlags_WidthFixed, region.x-killButtonSpace-cloneButtonSpace,0); // Default to 100.0f
                 }
                 ImGui_TableNextColumn();
                 sprintf(buf, "%d|v%d", GetID(ecs->entities[i]), GetVersion(ecs->entities[i]));
@@ -155,6 +152,18 @@ void EntityPanel(Arena* arena, ECS* ecs, Entity* inspected, bool togglePanel) {
                 ImGui_PushIDInt(i);
                 if(ImGui_Button("Kill")) {
                     KillEntity(ecs, ecs->entities[i]);
+                }
+                ImGui_SameLine();
+                if(ImGui_Button("Copy")) {
+                    Entity copied = ecs->entities[i];
+                    Entity new = CreateEntity(ecs);
+                    for(int i = 0; i < ecs->componentCount; ++i) {
+                        if(!HasComponent(ecs, copied, i)) continue;
+                        void* oldData = GetComponent(ecs, copied, i);
+                        AddEmptyComponent(arena, ecs, new, i);
+                        void* newData = GetComponent(ecs, new, i);
+                        memcpy(newData, oldData, ecs->blocks[i].componentSize);
+                    }
                 }
                 ImGui_PopID();
             }

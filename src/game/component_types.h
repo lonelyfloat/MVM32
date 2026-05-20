@@ -43,8 +43,9 @@ typedef Vector2 Velocity;
     init(DebugShape, DEBUG_SHAPE)\
     init(StaticGeometry, STATIC_GEOMETRY)\
     init(Relationship, RELATIONSHIP)\
-    init(FabrikNode, FABRIK_NODE)\
-    init(FabrikRoot, FABRIK_ROOT)
+    init(IKNode, IK_NODE)\
+    init(IKRoot, IK_ROOT)\
+    init(IKLeg, IK_LEG)
 
 COMPONENT_HEADER(COMPONENTS)
 
