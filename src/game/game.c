@@ -38,7 +38,7 @@ void Init(Arena* gameArena) {
     RegisterComponents(ecs, arena);
     InitAssets(gameArena, 2);
     LoadAsset("./assets/temp_tileset.png", "TempTileset", ASSET_TYPE_TEXTURE);
-    currentRoom = NewRoom(arena, screenWidth/gridSize + 2,screenHeight/gridSize + 2);
+    currentRoom = NewRoom(arena, screenWidth/gridSize + 2,screenHeight/gridSize + 2,50);
     screenWidth = GetScreenWidth();
     screenHeight = GetScreenHeight();
     ctx = GetImGuiContext();
@@ -76,7 +76,7 @@ void DrawEditor() {
     }
     DrawRectangleLinesEx((Rectangle){editorCursor.x*gridSize, editorCursor.y*gridSize, gridSize,gridSize}, 2, RED);
     Texture2D* tileset = GetAsset("TempTileset");
-    DrawRoomTiles(currentRoom, gridSize,tileset);
+    DrawRoomTiles(currentRoom, tileset);
 }
 
 void UpdateDrawFrame(void) {
@@ -88,11 +88,10 @@ void UpdateDrawFrame(void) {
     }
     if(!paused) {
         VelocitySystem(ecs);
-        // IKLegSystem(ecs, (Vector2){0, 620}, (Vector2){1280,620});
-        // FABRIKSystem(ecs, 50);
-        ResolveIK(ecs);
+        IKLegSystem(ecs,currentRoom);
+        ResolveIK(ecs,100);
         CollisionSystem(ecs);
-        ResolveRoomCollisions(ecs, gridSize, currentRoom);
+        ResolveRoomCollisions(ecs, currentRoom);
         PlayerSystem(ecs);
     }
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L))
@@ -119,6 +118,10 @@ void UpdateDrawFrame(void) {
             Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
             DebugShape d = IndexComponent(ecs, DebugShape,DEBUG_SHAPE_COMPONENT, i);
             DrawRectangleV(hb->pos, hb->scale, d.col);
+        }
+        for(int i = 0; i < ecs->blocks[IK_ROOT_COMPONENT].count; ++i) {
+            IKRoot c = IndexComponent(ecs, IKRoot, IK_ROOT_COMPONENT, i);
+            DrawCircleV(c.target,10, PINK);
         }
         DrawUI();
     EndDrawing();

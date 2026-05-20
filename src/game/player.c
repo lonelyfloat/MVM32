@@ -174,6 +174,23 @@ void PlayerSystem(ECS* ecs) {
         Entity e = GetEntity(ecs, PLAYER_COMPONENT, i);
         if(!HasComponents(ecs, e, 4, HITBOX_COMPONENT, VELOCITY_COMPONENT, SPRITE_COMPONENT, ACTOR_COMPONENT)) continue;
         UpdatePlayer(ecs, e);
+        Hitbox* playerH = GetComponent(ecs, e, HITBOX_COMPONENT);
+        // update leg positions
+        if(!HasComponent(ecs, e, RELATIONSHIP_COMPONENT)) continue;
+        Relationship* r = GetComponent(ecs, e, RELATIONSHIP_COMPONENT);
+        Entity child = r->first;
+        while(child != NULL_ENTITY) {
+            if(!HasComponent(ecs, child, RELATIONSHIP_COMPONENT)) break;
+            r = GetComponent(ecs, child, RELATIONSHIP_COMPONENT);
+            if(!HasComponents(ecs, child,3, HITBOX_COMPONENT, IK_LEG_COMPONENT, OFFSET_COMPONENT)) {
+                child = r->next;
+                continue;
+            }
+            Offset* o = GetComponent(ecs, child, OFFSET_COMPONENT);
+            Hitbox* hb = GetComponent(ecs, child, HITBOX_COMPONENT);
+            hb->pos = Vector2Add(playerH->pos, *o);
+            child = r->next;
+        }
     }
 }
 

@@ -4,10 +4,11 @@
 #include <raylib/raymath.h>
 #include "component_types.h"
     
-Room* NewRoom(Arena* arena, int width, int height) {
+Room* NewRoom(Arena* arena, int width, int height, int gridSize) {
     Room* results = ArenaAlloc(arena, sizeof(Room));
     results->width = width;
     results->height = height;
+    results->gridSize = gridSize;
     results->colliderGrid = ArenaAlloc(arena, results->width*sizeof(uint8_t*));
     results->editorGrid = ArenaAlloc(arena, results->width*sizeof(uint8_t*));
     for(int x = 0; x < results->width; ++x) {
@@ -29,6 +30,7 @@ Room* LoadRoom(ECS* ecs, Arena* arena, const char* file) {
         printf("ERROR: could not open room file %s\n", file);
         return NULL;
     }
+    fscanf(stream,"%x\n", &results->gridSize);
     fscanf(stream,"%x,%x\n", &results->width, &results->height);
     results->colliderGrid = ArenaAlloc(arena,results->width*sizeof(uint8_t*));
     results->editorGrid = ArenaAlloc(arena, results->width*sizeof(uint8_t*));
@@ -58,6 +60,7 @@ void SaveRoom(ECS* ecs, Room* room, const char* file) {
         printf("ERROR: could not open ECS room %s\n", file);
         return;
     }
+    fprintf(stream,"%x\n", room->gridSize);
     fprintf(stream,"%x,%x\n", room->width, room->height);
     for(int x = 0; x < room->width; ++x) {
         for(int y = 0; y < room->height; ++y) {
@@ -227,7 +230,8 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
     }
 }
 
-void DrawRoomTiles(Room* room, int gridSize, Texture2D* tileset) {
+void DrawRoomTiles(Room* room, Texture2D* tileset) {
+    int gridSize = room->gridSize;
     for (int x = 0; x < room->width; ++x) {
         for (int y = 0; y < room->height; ++y) {
             DrawTexturePro(*tileset, 
@@ -238,7 +242,8 @@ void DrawRoomTiles(Room* room, int gridSize, Texture2D* tileset) {
     }
 }
 
-void ResolveRoomCollisions(ECS* ecs, int gridSize, Room* room) {
+void ResolveRoomCollisions(ECS* ecs, Room* room) {
+    int gridSize = room->gridSize;
     Vector2 points[6];
     int pointsCount;
     int axesCount = 4;
@@ -255,6 +260,7 @@ void ResolveRoomCollisions(ECS* ecs, int gridSize, Room* room) {
         Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
         for(int x = 0; x < room->width; ++x) {
             for(int y = 0; y < room->height; ++y) {
+                if(room->colliderGrid[x][y] == 0) continue;
                 MarchingSquaresPolygon(room->colliderGrid[x][y], x+0.5,y+0.5,gridSize,points, &pointsCount);
                 float overlap = 1000000;
                 bool anOverlap = true;
@@ -278,4 +284,29 @@ void ResolveRoomCollisions(ECS* ecs, int gridSize, Room* room) {
             }
         }
     }
+}
+
+RayCollision2D CheckCollisionRayRoom(Vector2 point, Vector2 direction, Room* room) {
+    int gridSize = room->gridSize;
+    Vector2 points[6];
+    int pointsCount;
+    RayCollision2D result = (RayCollision2D){false, (Vector2){}};
+    float distanceS = 10000000;
+    for (int x = 0; x < room->width; ++x) {
+        for (int y = 0; y < room->height; ++y) {
+            if(room->colliderGrid[x][y] == 0) continue;
+            MarchingSquaresPolygon(room->colliderGrid[x][y], x+0.5,y+0.5,gridSize,points, &pointsCount);
+            for(int i = 0; i < pointsCount; ++i) {
+                RayCollision2D r = CheckCollisionRayLine(point,direction,points[i], points[(i+1)%pointsCount]);
+                if(r.hit) {
+                    float distSq = Vector2DistanceSqr(point, r.point);
+                    if(distSq < distanceS) {
+                        distanceS = distSq;
+                        result = r;
+                    }
+                }
+            }
+        }
+    }
+    return result;
 }

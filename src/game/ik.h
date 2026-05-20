@@ -3,6 +3,7 @@
 
 #include <ecs.h>
 #include <raylib/raylib.h>
+#include "room.h"
 
 // Components & systems for IK 'nodes'
 
@@ -13,12 +14,12 @@
 #define IK_NODE(X)\
     X(float, length)
 
-void ResolveIK(ECS* ecs);
+void ResolveIK(ECS* ecs, int iterations);
 
 #define IK_LEG(X)\
     X(float, xOffset)\
     X(float, strideLength)
 
-// void IKLegSystem(ECS* ecs, Vector2 groundA, Vector2 groundB);
+void IKLegSystem(ECS* ecs, Room* room);
 
 #endif

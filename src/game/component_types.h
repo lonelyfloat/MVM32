@@ -19,6 +19,11 @@ typedef Vector2 Velocity;
     X(float, x)\
     X(float, y)
 
+typedef Vector2 Offset;
+#define OFFSET(X)\
+    X(float, x)\
+    X(float, y)
+
 #define HEALTH(X)\
     X(int, health)\
     X(int, maxHealth)\
@@ -45,7 +50,8 @@ typedef Vector2 Velocity;
     init(Relationship, RELATIONSHIP)\
     init(IKNode, IK_NODE)\
     init(IKRoot, IK_ROOT)\
-    init(IKLeg, IK_LEG)
+    init(IKLeg, IK_LEG)\
+    init(Offset, OFFSET, STRUCT_DEFINED)
 
 COMPONENT_HEADER(COMPONENTS)
 
