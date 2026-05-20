@@ -32,6 +32,8 @@ typedef struct Player {
     bool canJump;
     bool jumpTrigger;
     bool grounded;
+    bool onSlope;
+    Vector2 slopeDir;
     float coyoteTimer;
     float jumpBufferTimer;
     float shotDurationTimer; 
@@ -44,6 +46,7 @@ typedef struct Player {
 #define PLAYER(X)\
     X(PlayerState, playerState)\
     X(bool, canJump)\
+    X(bool, onSlope)\
     X(bool, jumpTrigger)\
     X(bool, grounded)\
     X(float, coyoteTimer)\
@@ -52,6 +55,7 @@ typedef struct Player {
     X(float, shootChargeTimer)\
     X(Vector2, aimDir)\
     X(int, inputX)\
+    X(Vector2, slopeDir)
 
 void PlayerSystem(ECS* ecs);
 #endif

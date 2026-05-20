@@ -11,25 +11,34 @@
 #include "child.h"
 #include "utils.h"
 #include "prefab.h"
-#include <string.h>
+#include "room.h"
 
 ECS* ecs;
 
-int screenWidth = 1280;
-int screenHeight = 720;
+int screenWidth = 800;
+int screenHeight = 600;
 
 Arena* arena;
 bool paused = false;
 
 ImGuiContext* ctx;
 
+Room* currentRoom;
+
 Entity inspect = NULL_ENTITY;
+
+// Editor stuff
+const int gridSize = 50;
+Vector2 editorCursor;
+
 void Init(Arena* gameArena) {
     arena = gameArena;
     printf("Initializing game...\n");
     ecs = InitECS(arena, 100, COMPONENT_COUNT);
     RegisterComponents(ecs, arena);
     InitAssets(gameArena, 2);
+    LoadAsset("./assets/temp_tileset.png", "TempTileset", ASSET_TYPE_TEXTURE);
+    currentRoom = NewRoom(arena, screenWidth/gridSize + 2,screenHeight/gridSize + 2);
     screenWidth = GetScreenWidth();
     screenHeight = GetScreenHeight();
     ctx = GetImGuiContext();
@@ -45,18 +54,35 @@ void Load(char* file) {
     LoadEntitiesFromFile(ecs, arena, file);
 }
 
-void UpdateDrawFrame(void) {
+void UpdateEditor() {
+    Vector2 mousePos = GetMousePosition();
+    editorCursor.x = floor(mousePos.x/gridSize);
+    editorCursor.y = floor(mousePos.y/gridSize);
+    ImGuiIO* io = ImGui_GetIO();
+    if(!io->WantCaptureMouse) {
+        if(IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+            currentRoom->editorGrid[(int)editorCursor.x][(int)editorCursor.y] = 1;
+            Autotile(currentRoom);
+        }
+    }
+}
 
+void DrawEditor() {
+    for(int i = 1; i <= screenWidth/gridSize; ++i) {
+        DrawLine(i*gridSize, 0, i*gridSize, screenHeight, GRAY);
+    }
+    for(int i = 1; i <= screenHeight/gridSize; ++i) {
+        DrawLine(0, i*gridSize, screenWidth, i*gridSize, GRAY);
+    }
+    DrawRectangleLinesEx((Rectangle){editorCursor.x*gridSize, editorCursor.y*gridSize, gridSize,gridSize}, 2, RED);
+    Texture2D* tileset = GetAsset("TempTileset");
+    DrawRoomTiles(currentRoom, gridSize,tileset);
+}
+
+void UpdateDrawFrame(void) {
+    UpdateEditor();
     // Update
     //----------------------------------------------------------------------------------
-    // Enemy code
-    // if(enemy.x+enemy.width >= staticRecs[2].x+staticRecs[2].width) 
-    //     enemyVelo.x *= -1;
-    // if(enemy.x <= staticRecs[2].x) 
-    //     enemyVelo.x *= -1;
-    // enemy.x += enemyVelo.x * GetFrameTime();
-    // enemy.y += enemyVelo.y * GetFrameTime();
-
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_P)) {
         paused = !paused;
     }
@@ -66,15 +92,18 @@ void UpdateDrawFrame(void) {
         // FABRIKSystem(ecs, 50);
         ResolveIK(ecs);
         CollisionSystem(ecs);
+        ResolveRoomCollisions(ecs, gridSize, currentRoom);
         PlayerSystem(ecs);
     }
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L))
-        Load("./assets/game_data");
+        currentRoom = LoadRoom(ecs, arena, "./assets/rooms/temp_room");
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
-        Save("./assets/game_data"); 
+        SaveRoom(ecs, currentRoom, "./assets/rooms/temp_room");
 
     BeginUI();
     EntityPanel(arena,ecs, &inspect, IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E));
+    ImGui_Begin("Room Tools", NULL, ImGuiWindowFlags_None);
+    ImGui_End();
     EndUI();
 
 
@@ -83,6 +112,7 @@ void UpdateDrawFrame(void) {
     // ---------------------------------------------------------------------------------
     BeginDrawing();
         ClearBackground(RAYWHITE);
+        DrawEditor();
         for(int i = 0; i < ecs->blocks[DEBUG_SHAPE_COMPONENT].count; ++i) {
             Entity e = GetEntity(ecs, DEBUG_SHAPE_COMPONENT, i);
             if(!HasComponent(ecs, e, HITBOX_COMPONENT)) continue;

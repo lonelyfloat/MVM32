@@ -12,6 +12,9 @@
 void LoadEntitiesFromFile(ECS* ecs, Arena* arena, char* filePath);
 void SaveEntitiesToFile(ECS* ecs, char* filePath);
 
+void SerializeEntity(FILE* stream, ECS* ecs, Entity e);
+void DeserializeEntity(FILE* stream, Arena* arena, ECS* ecs, Entity e);
+
 
 #define _MAKE_SERIALIZER(type, name, ...) _Save_##type(stream, &value->name);
 #define _MAKE_TAGGED_UNION_SERIALIZER(type, name, enumname,...) case enumname: _Save_##type(stream, &value->data.name); break;

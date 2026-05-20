@@ -1,12 +1,47 @@
 #include "utils.h"
 #include <raylib/raymath.h>
 
-Vector2 RectanglePos(Rectangle r) {
-    return (Vector2){r.x, r.y};
+Vector2 ProjectRectangleOnAxis(Rectangle r, Vector2 axis) {
+    Vector2 pts[4];
+    pts[0] = (Vector2){r.x,r.y};
+    pts[1] = (Vector2){r.x+r.width,r.y};
+    pts[2] = (Vector2){r.x+r.width,r.y+r.height};
+    pts[3] = (Vector2){r.x,r.y+r.height};
+    return ProjectPolygonOnAxis(pts,4,axis);
 }
 
-Rectangle ChangeRectanglePos(Rectangle r, Vector2 pt) {
-    return (Rectangle){pt.x, pt.y, r.width, r.height};
+Vector2 ProjectPolygonOnAxis(Vector2* vertices, int vertexCount, Vector2 axis) {
+    float min = Vector2DotProduct(axis, vertices[0]);
+    float max = min;
+    for(int i = 1; i < vertexCount; ++i) {
+        float dot = Vector2DotProduct(axis, vertices[i]);
+        if(dot < min) {
+            min = dot;
+        } else if(dot > max) {
+            max = dot;
+        }
+    }
+    return (Vector2){min,max};
+}
+
+static inline float max(float a, float b) {
+    return a > b ? a : b;
+}
+
+static inline float min(float a, float b) {
+    return a < b ? a : b;
+}
+
+float GetOverlap(Vector2 a, Vector2 b) {
+    return max(0, min(a.y, b.y) - max(a.x, b.x));
+}
+
+float GetSignedOverlap(Vector2 moving, Vector2 still) {
+    float movingHW = moving.x + moving.y/2;
+    float stillHW = still.x + still.y/2;
+    float sign = 1;
+    if(movingHW < stillHW) sign = -1;
+    return sign*GetOverlap(moving,still);
 }
 
 Vector2 ResolveRectStaticRect(Rectangle moving, Rectangle st) {
@@ -35,13 +70,6 @@ Vector2 ResolveCircleStaticRect(Vector2 center, float radius, Rectangle rec) {
             inter);
 }
 
-static inline float max(float a, float b) {
-    return a > b ? a : b;
-}
-
-static inline float min(float a, float b) {
-    return a < b ? a : b;
-}
 
 Vector2 ResolveRectStaticTriangle(Rectangle rec, Vector2 triStart, Vector2 triBounds) {
     Vector2 side = Vector2Normalize(triBounds);

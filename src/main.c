@@ -15,8 +15,8 @@
 
 #include "reload.h"
 
-const int initialScreenWidth = 1280;
-const int initialScreenHeight = 720;
+const int initialScreenWidth = 800;
+const int initialScreenHeight = 600;
 
 ReloadCallbacks calls;
 

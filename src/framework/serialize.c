@@ -43,6 +43,46 @@ SERIALIZE_GEN_(Color, COLOR)
 // Saving and loading ECS from file
 #define _FERR(c, ...) do { if(c) { fprintf(stderr, __VA_ARGS__); return; } } while(0)
 
+// Save ONE entity
+void SerializeEntity(FILE* stream, ECS* ecs, Entity e) {
+    // Generate bitmask
+    uint64_t bitmask = 0;
+    uint64_t bit = 1;
+    for(int i = 0; i < ecs->componentCount; ++i) {
+        bitmask += bit*HasComponent(ecs, e, i);
+        bit = bit << 1;
+    }
+    fprintf(stream, "%lx:", bitmask);
+    for(int i = 0; i < ecs->componentCount; ++i) {
+        if(!HasComponent(ecs, e, i)) continue;
+        ecs->saveHooks[i](stream, ecs->blocks[i].components + ecs->blocks[i].indices[GetID(e)]*ecs->blocks[i].componentSize);
+        fprintf(stream, ";");
+    }
+    fprintf(stream, "\n");
+}
+
+// Load ONE entity
+void DeserializeEntity(FILE* stream, Arena* arena, ECS* ecs, Entity e) {
+    uint64_t bitmask = 0;
+    int mask = 1;
+    _FERR(fscanf(stream, "%lx:", &bitmask) != 1, "ERROR: %ld: fscanf failed in ECS file\n", ftell(stream));
+    for(int i = 0; i < ecs->componentCount; ++i) {
+        if(!(bitmask & mask)) {
+            mask = mask << 1;
+            continue;
+        }
+        // Add component {
+        ecs->loadHooks[i](stream, arena, ecs->blocks[i].components + ecs->blocks[i].count*ecs->blocks[i].componentSize);
+        ecs->blocks[i].entities[ecs->blocks[i].count] = e;
+        ecs->blocks[i].indices[GetID(e)] = ecs->blocks[i].count;
+        ecs->blocks[i].count += 1;
+        // }
+        mask = mask << 1;
+        _FERR(fscanf(stream, ";") != 0, "ERROR: %ld: fscanf failed in ECS file\n", ftell(stream));
+    }
+    _FERR(fscanf(stream, "\n") != 0, "ERROR: %ld: fscanf failed in ECS file\n", ftell(stream));
+}
+
 void LoadEntitiesFromFile(ECS* ecs, Arena* arena, char* filePath) {
     FILE* stream;
     stream = fopen(filePath, "r");

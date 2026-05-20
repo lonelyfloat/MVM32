@@ -130,7 +130,6 @@ void LoadEntityTree(ECS* ecs, Arena* arena, const char* filePath) {
             ecs->blocks[i].count += 1;
             if(i == RELATIONSHIP_COMPONENT) {
                 Relationship* r = GetComponent(ecs, e, RELATIONSHIP_COMPONENT); 
-                printf("e: %x|%x\n",GetID(e), GetVersion(e)); 
                 if(r->first != NULL_ENTITY) {
                     r->first = stack[r->first];
                 }

@@ -1,3 +1,6 @@
+# TODO (immediate): 
+- SLOPES
+
 # List of everything I NEED to do (MVP):
 ## Design
 - Setting considerations - where is this taking place

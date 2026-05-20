@@ -3,15 +3,18 @@
 
 #include <raylib/raylib.h>
 
-Vector2 RectanglePos(Rectangle r);
-Rectangle ChangeRectanglePos(Rectangle r, Vector2 pt);
-
 // An extension to raylib's collision functionality that allows static-body collision resolution
 // All return the projection vector
 
 // All of the functions I want:
 
 typedef Vector2 Triangle[3];
+
+// Returns tuple (min,max)
+Vector2 ProjectRectangleOnAxis(Rectangle r, Vector2 axis);
+Vector2 ProjectPolygonOnAxis(Vector2* vertices, int vertexCount, Vector2 axis);
+float GetOverlap(Vector2 a, Vector2 b);
+float GetSignedOverlap(Vector2 moving, Vector2 still);
 
 
 // Working: 

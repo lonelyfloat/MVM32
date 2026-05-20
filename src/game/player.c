@@ -32,6 +32,12 @@ void UpdatePlayer(ECS* ecs, Entity e) {
     bool groundChecked = false;
     Vector2 impulse = actor->impulse;
     hb->pos = Vector2Add(hb->pos, impulse);
+    // if(impulse.x != 0 && impulse.y != 0) {
+    //     player->onSlope = true;
+    //     player->slopeDir = Vector2Normalize(impulse);
+
+    // } else {
+    // }
     if(impulse.x != 0) {
         velo->x = 0;
     }
@@ -117,6 +123,11 @@ void UpdatePlayer(ECS* ecs, Entity e) {
                 // Horizontal movement code
 
                 velo->x += player->inputX * g_acceleration;
+                if(player->onSlope) {
+                    float moveDistance = fabs(velo->x);
+                    velo->y = player->slopeDir.y * moveDistance;
+                    velo->x = player->slopeDir.x * velo->x;
+                }
                 velo->x = Clamp(velo->x, -g_maxSpeed, g_maxSpeed);
             }
             break;
