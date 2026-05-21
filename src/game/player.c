@@ -20,51 +20,24 @@ const float g_shootChargeTime = 0.2;
 const float g_shootKnockback = 25;
 const float g_shotLength = 0.2;
 
-const float g_SlopeSnap = 4;
+const float g_SlopeSnap = 5;
 const float g_SlopeBoost = 5;
 const float g_SlopeWallTolerance = 1;
 
-
-// End player variables and constants
-void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
+void PlayerSlopesInternal(ECS* ecs, Entity e, Room* room) {
+    if(!HasComponents(ecs, e, 4, HITBOX_COMPONENT, VELOCITY_COMPONENT, SPRITE_COMPONENT, ACTOR_COMPONENT)) return;
     Player* player = GetComponent(ecs, e, PLAYER_COMPONENT);
     Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
     Velocity* velo = GetComponent(ecs, e, VELOCITY_COMPONENT);
-    Sprite* sprite = GetComponent(ecs, e, SPRITE_COMPONENT);
     Actor* actor = GetComponent(ecs, e, ACTOR_COMPONENT);
-    Vector2 impulse = actor->impulse;
-    if(impulse.x != 0) {
-        // velo->x = 0;
-    }
-    if(impulse.y != 0) {
-        velo->y = 0;
-    }
-    // Collision handling
-    if(impulse.y < 0 || (player->leftSlope || player->rightSlope)) {
-        player->grounded = true;
-        player->canJump = true;
-    } else {
-        if(player->grounded) {
-            player->coyoteTimer = g_coyoteTime;
-        }
-        player->grounded = false;
-    }
-    if(!player->leftSlope && !player->rightSlope && !player->grounded) {
-        velo->y += g_gravity;
-    }
-    velo->y = Clamp(velo->y, -g_terminalYVelo, g_terminalYVelo);
-
 
     RayCollision2D leftRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x,hb->pos.y+hb->scale.y-20},(Vector2){0,1},room);
     RayCollision2D rightRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x+hb->scale.x,hb->pos.y+hb->scale.y-20},(Vector2){0,1},room);
-    RayCollision2D leftWallRaycast = (RayCollision2D){false, (Vector2){}, (Vector2){}};
-    RayCollision2D rightWallRaycast = (RayCollision2D){false, (Vector2){}, (Vector2){}};
-    leftWallRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x,hb->pos.y+hb->scale.y/2},(Vector2){-1,0},room);
-    rightWallRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x+hb->scale.x,hb->pos.y+hb->scale.y/2},(Vector2){1,0},room);
     Vector2 leftNorm = leftRaycast.normal;
     Vector2 rightNorm = rightRaycast.normal;
     bool leftValid = leftNorm.x != 0 && leftNorm.y != 0;
     bool rightValid = rightNorm.x != 0 && rightNorm.y != 0;
+    // left
     if(leftNorm.x != 0 && leftNorm.y < 0) {
         bool n = false;
         if (leftNorm.x > 0){ // left slope ascending
@@ -96,6 +69,7 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
             hb->pos.y = leftRaycast.point.y - hb->scale.y;
         }
     }
+    // right side
     if(rightNorm.x != 0 && rightNorm.y < 0) {
         if(!player->leftSlope) {
             bool n = false;
@@ -104,12 +78,12 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
                     player->rightSlope = true;
                 }
                 else if(leftValid) {
-                    n = fabs(leftRaycast.point.y - (hb->pos.y+hb->scale.y)) < g_SlopeSnap;
+                    n = fabs(leftRaycast.point.y - (hb->pos.y+hb->scale.y+hb->scale.x)) < g_SlopeSnap;
                 } else {
                     n = fabs(hb->pos.y - rightRaycast.point.y) < hb->scale.y + 10;
                 }
                 if(n) { // descending
-                    if(fabs(hb->pos.y - rightRaycast.point.y) <= hb->scale.y+hb->scale.y) {
+                    if(fabs(hb->pos.y - rightRaycast.point.y) < hb->scale.y+hb->scale.y) {
                          player->rightSlope = true;
                     }
                 }
@@ -117,7 +91,7 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
         }
     } else {
         if(player->rightSlope) {
-            // velo->x += g_SlopeBoost;
+            // velo->x = g_SlopeBoost;
             velo->y = 0;
         }
         player->rightSlope = false;
@@ -136,6 +110,52 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
         actor->autoApply = false;
     }
 
+    if(actor->impulse.y < 0) {
+        actor->autoApply = true;
+    }
+}
+
+
+// End player variables and constants
+void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
+    Player* player = GetComponent(ecs, e, PLAYER_COMPONENT);
+    Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
+    Velocity* velo = GetComponent(ecs, e, VELOCITY_COMPONENT);
+    Sprite* sprite = GetComponent(ecs, e, SPRITE_COMPONENT);
+    Actor* actor = GetComponent(ecs, e, ACTOR_COMPONENT);
+    Vector2 impulse = actor->impulse;
+
+    bool topSlope = false;
+    if(impulse.y > 0) {
+        if(impulse.x != 0) {
+            topSlope = true;
+        }
+    }
+
+    if(!topSlope && impulse.y != 0) {
+        velo->y = 0;
+    }
+
+    // Collision handling
+    if(impulse.y < 0 || (player->leftSlope || player->rightSlope)) {
+        player->grounded = true;
+        player->canJump = true;
+    } else {
+        if(player->grounded) {
+            player->coyoteTimer = g_coyoteTime;
+        }
+        player->grounded = false;
+    }
+    if((!player->leftSlope && !player->rightSlope && !player->grounded)) {
+        velo->y += g_gravity;
+    }
+    velo->y = Clamp(velo->y, -g_terminalYVelo, g_terminalYVelo);
+
+
+    RayCollision2D leftWallRaycast = (RayCollision2D){false, (Vector2){}, (Vector2){}};
+    RayCollision2D rightWallRaycast = (RayCollision2D){false, (Vector2){}, (Vector2){}};
+    leftWallRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x,hb->pos.y+hb->scale.y/2},(Vector2){-1,0},room);
+    rightWallRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x+hb->scale.x,hb->pos.y+hb->scale.y/2},(Vector2){1,0},room);
 
 
     switch(player->playerState) {
@@ -250,12 +270,21 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
 
     if(leftWallRaycast.hit) {
         if(velo->x < 0 && fabs(leftWallRaycast.point.x - hb->pos.x) < g_SlopeWallTolerance) {
-                velo->x = g_SlopeWallTolerance;
+                velo->x = 0;
         }
     }
     if(rightWallRaycast.hit) {
         if(velo->x > 0 && fabs(rightWallRaycast.point.x - (hb->pos.x+hb->scale.x)) < g_SlopeWallTolerance) {
-                velo->x = -g_SlopeWallTolerance;
+                velo->x = 0;
+        }
+    }
+    if(topSlope) {
+        if(player->inputX == 0) {
+            velo->x = 0;
+            velo->y = g_gravity;
+        } else {
+            velo->y = (impulse.y/fabs(impulse.x)) * fabs(velo->x); 
+            *velo = Vector2Scale(Vector2Normalize(*velo), fabs(velo->x));
         }
     }
     
@@ -283,6 +312,14 @@ void PlayerSystem(ECS* ecs, Room* room) {
             hb->pos = Vector2Add(playerH->pos, *o);
             child = r->next;
         }
+    }
+}
+
+void PlayerSlopes(ECS* ecs, Room* room) {
+    for(int i = 0; i < ecs->blocks[PLAYER_COMPONENT].count; ++i) {
+        Entity e = GetEntity(ecs, PLAYER_COMPONENT, i);
+        if(!HasComponents(ecs, e, 4, HITBOX_COMPONENT, VELOCITY_COMPONENT, SPRITE_COMPONENT, ACTOR_COMPONENT)) continue;
+        PlayerSlopesInternal(ecs,e,room);
     }
 }
 

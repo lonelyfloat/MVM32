@@ -61,4 +61,5 @@ typedef struct Player {
     X(Vector2, slopeDir)
 
 void PlayerSystem(ECS* ecs, Room* room);
+void PlayerSlopes(ECS* ecs, Room* room);
 #endif

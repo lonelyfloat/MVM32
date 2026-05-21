@@ -64,6 +64,10 @@ void UpdateEditor() {
             currentRoom->editorGrid[(int)editorCursor.x][(int)editorCursor.y] = 1;
             Autotile(currentRoom);
         }
+        if(IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
+            currentRoom->editorGrid[(int)editorCursor.x][(int)editorCursor.y] = 0;
+            Autotile(currentRoom);
+        }
     }
 }
 
@@ -93,6 +97,7 @@ void UpdateDrawFrame(void) {
         ResolveRoomCollisions(ecs, currentRoom);
         ResolveIK(ecs,100);
         IKLegSystem(ecs,currentRoom);
+        PlayerSlopes(ecs, currentRoom);
     }
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L))
         currentRoom = LoadRoom(ecs, arena, "./assets/rooms/temp_room");
