@@ -1,5 +1,5 @@
 # TODO (immediate): 
-- SLOPES
+- Player slope movement
 
 # List of everything I NEED to do (MVP):
 ## Design

@@ -126,8 +126,8 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
         case 2:
             *vertexCount = 3;
             vertices[0] = right;
-            vertices[1] = bottom;
-            vertices[2] = br;
+            vertices[1] = br;
+            vertices[2] = bottom;
             break;
         case 3:
             *vertexCount = 4;
@@ -215,9 +215,9 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
             *vertexCount = 5;
             vertices[0] = tl;
             vertices[1] = tr;
-            vertices[2] = br;
-            vertices[3] = bottom;
-            vertices[4] = right;
+            vertices[2] = right;
+            vertices[3] = br;
+            vertices[4] = bottom;
             break;
         case 15:
             *vertexCount = 4;
@@ -230,7 +230,11 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
     }
 }
 
+const bool debugView = false;
+
 void DrawRoomTiles(Room* room, Texture2D* tileset) {
+    Vector2 points[6];
+    int pointsCount = 0;
     int gridSize = room->gridSize;
     for (int x = 0; x < room->width; ++x) {
         for (int y = 0; y < room->height; ++y) {
@@ -238,6 +242,12 @@ void DrawRoomTiles(Room* room, Texture2D* tileset) {
             (Rectangle){room->colliderGrid[x][y]*gridSize,0,gridSize,gridSize},
             (Rectangle){gridSize*x + gridSize/2.0,gridSize*y + gridSize/2.0,gridSize,gridSize},
             (Vector2){},0,WHITE);
+            if(debugView) {
+                MarchingSquaresPolygon(room->colliderGrid[x][y], x+0.5,y+0.5,gridSize,points, &pointsCount);
+                for(int i = 0; i < pointsCount; ++i) {
+                    DrawLineV(points[i], points[(i+1)%pointsCount], BLUE);
+                }
+            }
         }
     }
 }
@@ -258,10 +268,26 @@ void ResolveRoomCollisions(ECS* ecs, Room* room) {
         Actor* impulse = &IndexComponent(ecs, Actor, ACTOR_COMPONENT, i);
         impulse->impulse = Vector2Zero();
         Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
+        RayCollision2D ray = (RayCollision2D){false,(Vector2){}, (Vector2){}};
+        Vector2 avgImpulse = impulse->impulse;
+        float distance = 1000000;
+        Vector2 pt = (Vector2){hb->pos.x+hb->scale.x/2,hb->pos.y+hb->scale.y/2};
         for(int x = 0; x < room->width; ++x) {
             for(int y = 0; y < room->height; ++y) {
                 if(room->colliderGrid[x][y] == 0) continue;
                 MarchingSquaresPolygon(room->colliderGrid[x][y], x+0.5,y+0.5,gridSize,points, &pointsCount);
+                // Raytrace for slopes
+                for(int i = 0; i < pointsCount; ++i) {
+                    RayCollision2D r = CheckCollisionRayLine(pt,(Vector2){0,1},points[i], points[(i+1)%pointsCount]);
+                    if(r.hit) {
+                        float distSq = Vector2DistanceSqr(pt, r.point);
+                        if(distSq < distance) {
+                            distance = distSq;
+                            ray = r;
+                        }
+                    }
+                }
+                // SAT
                 float overlap = 1000000;
                 bool anOverlap = true;
                 Vector2 smallest = (Vector2){};
@@ -280,9 +306,16 @@ void ResolveRoomCollisions(ECS* ecs, Room* room) {
                 }
                 if(anOverlap) {
                     impulse->impulse = Vector2Scale(smallest, overlap);
+                    if(impulse->autoApply) {
+                        hb->pos = Vector2Add(hb->pos, impulse->impulse);
+                    }
+                    avgImpulse = Vector2Add(avgImpulse, impulse->impulse);
                 }
             }
         }
+        // impulse->impulse = avgImpulse;
+        impulse->raycast = ray;
+        // Set ray normal
     }
 }
 

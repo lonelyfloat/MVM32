@@ -3,13 +3,13 @@
 #include "component_types.h"
 
 // Movement  constants
-const float g_acceleration = 100;
-const float g_maxSpeed = 400;
-const float g_groundFriction = 0.8;
+const float g_acceleration = 400;
+const float g_maxSpeed = 300;
+const float g_groundFriction = 0.7;
 const float g_airResistance = 0.7;
-const float g_gravity = 30;
+const float g_gravity = 40;
 const float g_coyoteTime = 0.1;
-const float g_jumpBuffer = 0.06;
+const float g_jumpBuffer = 0.04;
 const float g_variableJumpFrac = 0.5;
 const float g_collisionDampening = 5.0;
 const float g_terminalYVelo = 1000;
@@ -20,44 +20,124 @@ const float g_shootChargeTime = 0.2;
 const float g_shootKnockback = 25;
 const float g_shotLength = 0.2;
 
+const float g_SlopeSnap = 4;
+const float g_SlopeBoost = 5;
+const float g_SlopeWallTolerance = 1;
+
 
 // End player variables and constants
-void UpdatePlayer(ECS* ecs, Entity e) {
+void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
     Player* player = GetComponent(ecs, e, PLAYER_COMPONENT);
     Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
     Velocity* velo = GetComponent(ecs, e, VELOCITY_COMPONENT);
     Sprite* sprite = GetComponent(ecs, e, SPRITE_COMPONENT);
     Actor* actor = GetComponent(ecs, e, ACTOR_COMPONENT);
-
-    bool groundChecked = false;
     Vector2 impulse = actor->impulse;
-    hb->pos = Vector2Add(hb->pos, impulse);
-    // if(impulse.x != 0 && impulse.y != 0) {
-    //     player->onSlope = true;
-    //     player->slopeDir = Vector2Normalize(impulse);
-
-    // } else {
-    // }
     if(impulse.x != 0) {
-        velo->x = 0;
+        // velo->x = 0;
     }
     if(impulse.y != 0) {
         velo->y = 0;
     }
-    if(!groundChecked) {
-        if(impulse.y < 0) {
-            player->grounded = true;
-            groundChecked = true;
-            player->canJump = true;
-        } else {
-            if(player->grounded) {
-                player->coyoteTimer = g_coyoteTime;
+    // Collision handling
+    if(impulse.y < 0 || (player->leftSlope || player->rightSlope)) {
+        player->grounded = true;
+        player->canJump = true;
+    } else {
+        if(player->grounded) {
+            player->coyoteTimer = g_coyoteTime;
+        }
+        player->grounded = false;
+    }
+    if(!player->leftSlope && !player->rightSlope && !player->grounded) {
+        velo->y += g_gravity;
+    }
+    velo->y = Clamp(velo->y, -g_terminalYVelo, g_terminalYVelo);
+
+
+    RayCollision2D leftRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x,hb->pos.y+hb->scale.y-20},(Vector2){0,1},room);
+    RayCollision2D rightRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x+hb->scale.x,hb->pos.y+hb->scale.y-20},(Vector2){0,1},room);
+    RayCollision2D leftWallRaycast = (RayCollision2D){false, (Vector2){}, (Vector2){}};
+    RayCollision2D rightWallRaycast = (RayCollision2D){false, (Vector2){}, (Vector2){}};
+    leftWallRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x,hb->pos.y+hb->scale.y/2},(Vector2){-1,0},room);
+    rightWallRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x+hb->scale.x,hb->pos.y+hb->scale.y/2},(Vector2){1,0},room);
+    Vector2 leftNorm = leftRaycast.normal;
+    Vector2 rightNorm = rightRaycast.normal;
+    bool leftValid = leftNorm.x != 0 && leftNorm.y != 0;
+    bool rightValid = rightNorm.x != 0 && rightNorm.y != 0;
+    if(leftNorm.x != 0 && leftNorm.y < 0) {
+        bool n = false;
+        if (leftNorm.x > 0){ // left slope ascending
+            if(fabs(hb->pos.y - leftRaycast.point.y) <= hb->scale.y) {
+                player->leftSlope = true;
             }
-            player->grounded = false;
+            else if(rightValid) {
+                n = fabs(rightRaycast.point.y - (hb->pos.y+hb->scale.y+hb->scale.x)) < g_SlopeSnap;
+            } else {
+                n = fabs(hb->pos.y - leftRaycast.point.y) < hb->scale.y + 10;
+            }
+            if(n) { // descending
+                if(fabs(hb->pos.y - leftRaycast.point.y) < hb->scale.y+hb->scale.y) {
+                     player->leftSlope = true;
+                }
+            }
+        }
+    } else {
+        if(player->leftSlope) {
+            // velo->x = g_SlopeBoost;
+            velo->y = 0;
+        }
+        player->leftSlope = false;
+    }
+    if(player->leftSlope) {
+        if(fabs(hb->pos.y - leftRaycast.point.y) > 100) {
+            player->leftSlope = false;
+        } else {
+            hb->pos.y = leftRaycast.point.y - hb->scale.y;
         }
     }
-    // Gravity / terminal y velo
-    velo->y += g_gravity;
+    if(rightNorm.x != 0 && rightNorm.y < 0) {
+        if(!player->leftSlope) {
+            bool n = false;
+            if (rightNorm.x < 0){ // right slope ascending
+                if(fabs(hb->pos.y - rightRaycast.point.y) <= hb->scale.y) {
+                    player->rightSlope = true;
+                }
+                else if(leftValid) {
+                    n = fabs(leftRaycast.point.y - (hb->pos.y+hb->scale.y)) < g_SlopeSnap;
+                } else {
+                    n = fabs(hb->pos.y - rightRaycast.point.y) < hb->scale.y + 10;
+                }
+                if(n) { // descending
+                    if(fabs(hb->pos.y - rightRaycast.point.y) <= hb->scale.y+hb->scale.y) {
+                         player->rightSlope = true;
+                    }
+                }
+            }
+        }
+    } else {
+        if(player->rightSlope) {
+            // velo->x += g_SlopeBoost;
+            velo->y = 0;
+        }
+        player->rightSlope = false;
+    }
+    if(player->rightSlope) {
+        if(fabs(hb->pos.y - rightRaycast.point.y) > 100) {
+            player->rightSlope = false;
+        } else {
+            hb->pos.y = rightRaycast.point.y - hb->scale.y;
+        }
+    }
+
+    if(!player->leftSlope && !player->rightSlope) {
+        actor->autoApply = true;
+    } else {
+        actor->autoApply = false;
+    }
+
+
+
     switch(player->playerState) {
         case PLAYER_NORMAL: {
                 if(IsKeyDown(KEY_X)) {
@@ -112,6 +192,8 @@ void UpdatePlayer(ECS* ecs, Entity e) {
                 if(player->jumpTrigger) {
                     velo->y = g_jumpVelo;
                     player->jumpTrigger = false;
+                    player->leftSlope = false;
+                    player->rightSlope = false;
                 }
 
                 if(IsKeyReleased(KEY_C) && velo->y < -100) {
@@ -122,12 +204,11 @@ void UpdatePlayer(ECS* ecs, Entity e) {
 
                 // Horizontal movement code
 
-                velo->x += player->inputX * g_acceleration;
-                if(player->onSlope) {
-                    float moveDistance = fabs(velo->x);
-                    velo->y = player->slopeDir.y * moveDistance;
-                    velo->x = player->slopeDir.x * velo->x;
-                }
+                float horizInput = player->inputX;
+                // if(player->leftSlope || player->rightSlope) {
+                //     horizInput = player->inputX * 0.4;
+                // }
+                velo->x += horizInput * g_acceleration;
                 velo->x = Clamp(velo->x, -g_maxSpeed, g_maxSpeed);
             }
             break;
@@ -166,14 +247,25 @@ void UpdatePlayer(ECS* ecs, Entity e) {
             velo->x *= g_airResistance;
         }
     }
-    velo->y = Clamp(velo->y, -g_terminalYVelo, g_terminalYVelo);
+
+    if(leftWallRaycast.hit) {
+        if(velo->x < 0 && fabs(leftWallRaycast.point.x - hb->pos.x) < g_SlopeWallTolerance) {
+                velo->x = g_SlopeWallTolerance;
+        }
+    }
+    if(rightWallRaycast.hit) {
+        if(velo->x > 0 && fabs(rightWallRaycast.point.x - (hb->pos.x+hb->scale.x)) < g_SlopeWallTolerance) {
+                velo->x = -g_SlopeWallTolerance;
+        }
+    }
+    
 }
 
-void PlayerSystem(ECS* ecs) {
+void PlayerSystem(ECS* ecs, Room* room) {
     for(int i = 0; i < ecs->blocks[PLAYER_COMPONENT].count; ++i) {
         Entity e = GetEntity(ecs, PLAYER_COMPONENT, i);
         if(!HasComponents(ecs, e, 4, HITBOX_COMPONENT, VELOCITY_COMPONENT, SPRITE_COMPONENT, ACTOR_COMPONENT)) continue;
-        UpdatePlayer(ecs, e);
+        UpdatePlayer(ecs, e, room);
         Hitbox* playerH = GetComponent(ecs, e, HITBOX_COMPONENT);
         // update leg positions
         if(!HasComponent(ecs, e, RELATIONSHIP_COMPONENT)) continue;

@@ -33,6 +33,7 @@ typedef Vector2 Offset;
 
 #define ACTOR(X)\
     X(Vector2,impulse)\
+    X(RayCollision2D,raycast)\
     X(bool,autoApply)\
 
 #define DEBUG_SHAPE(X)\

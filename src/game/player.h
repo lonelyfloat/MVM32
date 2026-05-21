@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "arena.h"
 #include "serialize.h"
+#include "room.h"
 #include "component_memory.h"
 #include "ui/ui_types.h"
 
@@ -32,7 +33,8 @@ typedef struct Player {
     bool canJump;
     bool jumpTrigger;
     bool grounded;
-    bool onSlope;
+    bool leftSlope;
+    bool rightSlope;
     Vector2 slopeDir;
     float coyoteTimer;
     float jumpBufferTimer;
@@ -46,9 +48,10 @@ typedef struct Player {
 #define PLAYER(X)\
     X(PlayerState, playerState)\
     X(bool, canJump)\
-    X(bool, onSlope)\
     X(bool, jumpTrigger)\
     X(bool, grounded)\
+    X(bool, leftSlope)\
+    X(bool, rightSlope)\
     X(float, coyoteTimer)\
     X(float, jumpBufferTimer)\
     X(float, shotDurationTimer)\
@@ -57,5 +60,5 @@ typedef struct Player {
     X(int, inputX)\
     X(Vector2, slopeDir)
 
-void PlayerSystem(ECS* ecs);
+void PlayerSystem(ECS* ecs, Room* room);
 #endif

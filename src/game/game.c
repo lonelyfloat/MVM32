@@ -87,12 +87,12 @@ void UpdateDrawFrame(void) {
         paused = !paused;
     }
     if(!paused) {
+        PlayerSystem(ecs, currentRoom);
         VelocitySystem(ecs);
-        IKLegSystem(ecs,currentRoom);
-        ResolveIK(ecs,100);
-        CollisionSystem(ecs);
+        // CollisionSystem(ecs);
         ResolveRoomCollisions(ecs, currentRoom);
-        PlayerSystem(ecs);
+        ResolveIK(ecs,100);
+        IKLegSystem(ecs,currentRoom);
     }
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L))
         currentRoom = LoadRoom(ecs, arena, "./assets/rooms/temp_room");
@@ -117,11 +117,7 @@ void UpdateDrawFrame(void) {
             if(!HasComponent(ecs, e, HITBOX_COMPONENT)) continue;
             Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
             DebugShape d = IndexComponent(ecs, DebugShape,DEBUG_SHAPE_COMPONENT, i);
-            DrawRectangleV(hb->pos, hb->scale, d.col);
-        }
-        for(int i = 0; i < ecs->blocks[IK_ROOT_COMPONENT].count; ++i) {
-            IKRoot c = IndexComponent(ecs, IKRoot, IK_ROOT_COMPONENT, i);
-            DrawCircleV(c.target,10, PINK);
+            DrawRectangleRec(HitboxToRect(*hb), d.col);
         }
         DrawUI();
     EndDrawing();

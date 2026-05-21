@@ -6,6 +6,16 @@
 #define UI_GEN_HEADER(T,...) void _UI_##T(char* name, void* value);
 #define UI_GEN_COMPONENT_HEADER(T,...) void _UI_Component_##T(void* value);
 
+#define UI_GEN_NORM(T,X)\
+void _UI_##T(char* name, void* value){ \
+    T* _value = value;\
+    ImGui_TextUnformatted(name);\
+    ImGui_SameLine();\
+    ImGui_PushIDPtr(value);\
+    X(_MAKE_UI_FIELD)\
+    ImGui_PopID();\
+}\
+
 
 #define UI_GEN_(T,X)\
 void _UI_Component_##T(void* value){ \
