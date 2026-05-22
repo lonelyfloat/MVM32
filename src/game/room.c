@@ -4,13 +4,19 @@
 #include <raylib/raymath.h>
 #include "component_types.h"
     
+#define ROOM_MAX_ENTITIES 100
+#define ROOM_MAX_PORTALS 10
+
 Room* NewRoom(Arena* arena, int width, int height, int gridSize) {
     Room* results = ArenaAlloc(arena, sizeof(Room));
     results->width = width;
     results->height = height;
     results->gridSize = gridSize;
+    results->portalCount = 0;
+    results->portals = ArenaAlloc(arena, ROOM_MAX_PORTALS * sizeof(Portal));
     results->colliderGrid = ArenaAlloc(arena, results->width*sizeof(uint8_t*));
     results->editorGrid = ArenaAlloc(arena, results->width*sizeof(uint8_t*));
+    results->entityData = InitECS(arena, ROOM_MAX_ENTITIES, COMPONENT_COUNT); 
     for(int x = 0; x < results->width; ++x) {
         results->colliderGrid[x] = ArenaAlloc(arena, results->height*sizeof(uint8_t));
         results->editorGrid[x] = ArenaAlloc(arena, results->height*sizeof(uint8_t));
@@ -22,7 +28,7 @@ Room* NewRoom(Arena* arena, int width, int height, int gridSize) {
     return results;
 }
 
-Room* LoadRoom(ECS* ecs, Arena* arena, const char* file) {
+Room* LoadRoom(Arena* arena, const char* file) {
     Room* results = ArenaAlloc(arena, sizeof(Room));
     FILE* stream;
     stream = fopen(file, "r");
@@ -42,18 +48,29 @@ Room* LoadRoom(ECS* ecs, Arena* arena, const char* file) {
         }
         fscanf(stream,"\n");
     }
-    NukeECS(ecs);
     int totalEntities = 0;
     fscanf(stream,"%x\n", &totalEntities);
-    while(!feof(stream)) {
-        Entity e = CreateEntity(ecs);
-        DeserializeEntity(stream, arena, ecs, e);
+    results->entityData = InitECS(arena, ROOM_MAX_ENTITIES, COMPONENT_COUNT);
+    for(int i = 0; i < totalEntities; ++i) {
+        Entity e = CreateEntity(results->entityData);
+        DeserializeEntity(stream, arena, results->entityData, e);
+    }
+    fscanf(stream, "%x\n", &results->portalCount);
+    results->portals = ArenaAlloc(arena,ROOM_MAX_PORTALS * sizeof(Portal));
+    for(int i = 0; i < results->portalCount; ++i) {
+        fscanf(stream, "%f,%f,%f,%f,%x,%x\n",
+            &results->portals[i].bounds.x,
+            &results->portals[i].bounds.y,
+            &results->portals[i].bounds.width,
+            &results->portals[i].bounds.height,
+            &results->portals[i].destinationRoom,
+            &results->portals[i].destinationPortal);
     }
     fclose(stream);
     return results;
 }
 
-void SaveRoom(ECS* ecs, Room* room, const char* file) {
+void SaveRoom(Room* room, const char* file) {
     FILE* stream;
     stream = fopen(file, "w");
     if(!stream) {
@@ -68,12 +85,23 @@ void SaveRoom(ECS* ecs, Room* room, const char* file) {
         }
         fprintf(stream,"\n");
     }
+    ECS* ecs = room->entityData;
     fprintf(stream,"%x\n", ecs->totalEntities);
     for(uint16_t en = 0; en < ecs->totalEntities; ++en) {
         if(en != GetID(ecs->entities[en])) {
             continue;
         }
         SerializeEntity(stream, ecs, ecs->entities[en]);
+    }
+    fprintf(stream, "%x\n", room->portalCount);
+    for(int i = 0; i < room->portalCount; ++i) {
+        fprintf(stream, "%f,%f,%f,%f,%x,%x\n",
+            room->portals[i].bounds.x,
+            room->portals[i].bounds.y,
+            room->portals[i].bounds.width,
+            room->portals[i].bounds.height,
+            room->portals[i].destinationRoom,
+            room->portals[i].destinationPortal);
     }
     fclose(stream);
 }
@@ -230,6 +258,10 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
     }
 }
 
+void ApplyRoom(ECS* ecs, Room* room) {
+    ecs = room->entityData;
+}
+
 const bool debugView = false;
 
 void DrawRoomTiles(Room* room, Texture2D* tileset) {
@@ -313,9 +345,7 @@ void ResolveRoomCollisions(ECS* ecs, Room* room) {
                 }
             }
         }
-        // impulse->impulse = avgImpulse;
         impulse->raycast = ray;
-        // Set ray normal
     }
 }
 

@@ -84,6 +84,8 @@ void KillEntity(ECS* ecs, Entity entity);
 
 void NukeECS(ECS* ecs); // Kill all entities
 
+void AddEmptyComponent(Arena* arena, ECS* ecs, Entity e, ComponentIndex i);
+
 
 
 // Used by macro in "component.h"

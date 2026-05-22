@@ -113,6 +113,14 @@ void KillEntity(ECS* ecs, Entity entity) {
     ecs->available++;
 }
 
+
+void AddEmptyComponent(Arena* arena, ECS* ecs, Entity e, ComponentIndex i) {
+    ecs->allocHooks[i](arena,ecs->blocks[i].components + ecs->blocks[i].count*ecs->blocks[i].componentSize);
+    ecs->blocks[i].entities[ecs->blocks[i].count] = e;
+    ecs->blocks[i].indices[GetID(e)] = ecs->blocks[i].count;
+    ecs->blocks[i].count += 1;
+}
+
 EntityCount GetEntityAmount(ECS* ecs) {
     if(ecs->destroyed == INVALID_ID) {
         return ecs->totalEntities;

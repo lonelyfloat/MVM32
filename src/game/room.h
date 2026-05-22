@@ -5,18 +5,32 @@
 #include <raylib/raylib.h>
 #include "raycast.h"
 
+typedef uint32_t RoomID;
+
+typedef struct Portal {
+    Rectangle bounds;
+    uint32_t destinationRoom, destinationPortal;
+} Portal;
+
 // For the static colliders for each in-game room
 typedef struct Room {
     int gridSize;
     int width,height; // in tiles
     uint8_t** editorGrid;
     uint8_t** colliderGrid;
+    int portalCount;
+    Portal* portals;
+    ECS* entityData;
 } Room;
 
 
+
+
 Room* NewRoom(Arena* arena, int width, int height, int gridSize);
-Room* LoadRoom(ECS* ecs, Arena* arena, const char* file);
-void SaveRoom(ECS* ecs, Room* room, const char* file);
+Room* LoadRoom(Arena* arena, const char* file);
+void SaveRoom(Room* room, const char* file);
+
+void ApplyRoom(ECS* ecs, Room* room);
 
 void Autotile(Room* room);
 void DrawRoomTiles(Room* room, Texture2D* tileset);

@@ -1,5 +1,6 @@
-# TODO (immediate): 
-- Player slope movement
+# Todo: High Priority: 
+- Room editing w/ camera panning/control
+- Room / level creation utilities (door 'portals' etc. to change what room the player is in)
 
 # List of everything I NEED to do (MVP):
 ## Design
@@ -25,8 +26,8 @@
 - Hard SFX for each enemy & player, etc.
 ## Programming
 - Inverse Kinematics
-    - Leg IK
-        - Raycasting
+    - Leg IK (MOSTLY DONE)
+        - Raycasting (MOSTLY DONE)
     - Player Arm IK (for the gun)
 - Rudimentary dialogue box system 
 - Enemy "health puzzle" system
@@ -35,6 +36,7 @@
 - ImGui 
     - load/save to and from specific files in a menu
     - Room / level creation utilities (door 'portals' etc.)
+- Asset integration of art, music, sfx, etc.
 
 # Nice to haves
 - Controller support (prize incentive)

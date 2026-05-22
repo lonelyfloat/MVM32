@@ -54,12 +54,6 @@ void DestroyUI() {
 }
 
 // Jank alert !!!! 
-static void AddEmptyComponent(Arena* arena, ECS* ecs, Entity e, ComponentIndex i) {
-    ecs->allocHooks[i](arena,ecs->blocks[i].components + ecs->blocks[i].count*ecs->blocks[i].componentSize);
-    ecs->blocks[i].entities[ecs->blocks[i].count] = e;
-    ecs->blocks[i].indices[GetID(e)] = ecs->blocks[i].count;
-    ecs->blocks[i].count += 1;
-}
 
 void EntityInspector(Arena* arena, ECS* ecs, Entity* inspected) {
     bool show = *inspected != NULL_ENTITY;

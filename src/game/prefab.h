@@ -6,4 +6,7 @@
 void SaveEntityTree(ECS* ecs, Entity e, const char* filePath);
 void LoadEntityTree(ECS* ecs, Arena* arena, const char* filePath);
 
+ECS* MakePrefab(Arena* arena, ECS* ecs, Entity e);
+void MergePrefab(ECS* world, ECS* prefab);
+
 #endif
