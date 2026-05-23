@@ -241,12 +241,13 @@ void MergePrefab(ECS* world, ECS* prefab) {
         stack[i] = CreateEntity(world);
     }
     for(int en = 0; en < entityCount; ++en) {
+        Entity stackEntity = ConstructEntity(en, 0);
         Entity worldEntity = stack[en];
         for(int i = 0; i < world->componentCount; ++i) {
-            if(!HasComponent(prefab,en,i)) continue;
+            if(!HasComponent(prefab,stackEntity,i)) continue;
             // AddEmptyComponent(arena, world, worldEntity, i);
             void* worldComp = GetComponent(world, worldEntity, i);
-            void* prefabComp = GetComponent(world, en, i);
+            void* prefabComp = GetComponent(prefab, stackEntity, i);
             memcpy(worldComp, prefabComp,prefab->blocks[i].componentSize);
             world->blocks[i].entities[world->blocks[i].count] = worldEntity;
             world->blocks[i].indices[GetID(worldEntity)] = world->blocks[i].count;

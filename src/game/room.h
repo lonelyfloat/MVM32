@@ -23,14 +23,13 @@ typedef struct Room {
     ECS* entityData;
 } Room;
 
-
-
+void TraversePortal();
 
 Room* NewRoom(Arena* arena, int width, int height, int gridSize);
 Room* LoadRoom(Arena* arena, const char* file);
 void SaveRoom(Room* room, const char* file);
 
-void ApplyRoom(ECS* ecs, Room* room);
+void ApplyRoom(ECS** ecs, Room* room);
 
 void Autotile(Room* room);
 void DrawRoomTiles(Room* room, Texture2D* tileset);

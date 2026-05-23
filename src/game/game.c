@@ -14,6 +14,7 @@
 #include "room.h"
 
 ECS* ecs;
+ECS* player;
 
 int screenWidth = 800;
 int screenHeight = 600;
@@ -25,32 +26,47 @@ ImGuiContext* ctx;
 
 Room* currentRoom;
 
+int totalRooms = 1;
+int roomID = 0;
 Room* allRooms;
+char* roomName;
 
+const int gridSize = 50;
+Camera2D worldCamera = (Camera2D) {.offset=(Vector2){-gridSize/2.0,-gridSize/2.0},.target=(Vector2){},.rotation=0.0,.zoom=1.0};
 Entity inspect = NULL_ENTITY;
+
 
 // Editor stuff
 enum EditorMode {
     EDITOR_TERRAIN,
     EDITOR_PORTAL
 } editorMode;
-const int gridSize = 50;
 Vector2 editorCursor;
 Vector2 portalMin = (Vector2){};
 
 bool editorEnabled = false;
 int configPortal = -1;
 bool dragging = false;
-Camera2D worldCamera = (Camera2D) {.offset=(Vector2){-gridSize/2.0,-gridSize/2.0},.target=(Vector2){},.rotation=0.0,.zoom=1.0};
+bool showRoomCreator;
+Room hypotheticalRoom = (Room){};
+int hypotheticalRoomID = 0;
+// prospective room stats
+
 
 void Init(Arena* gameArena) {
     arena = gameArena;
+    roomName = ArenaAlloc(arena, 30);
+    roomName[0] = '\0';
     printf("Initializing game...\n");
     ecs = InitECS(arena, 100, COMPONENT_COUNT);
     RegisterComponents(ecs, arena);
     InitAssets(gameArena, 2);
     LoadAsset("./assets/temp_tileset.png", "TempTileset", ASSET_TYPE_TEXTURE);
-    currentRoom = NewRoom(arena, screenWidth/gridSize + 2,screenHeight/gridSize + 2,50);
+    allRooms = ArenaAlloc(gameArena, sizeof(Room)*totalRooms);
+    allRooms[0] = *NewRoom(arena, screenWidth/gridSize + 2,screenHeight/gridSize + 2,50);
+    currentRoom = &allRooms[0];
+    roomID = 0;
+    sprintf(roomName, "./assets/rooms/room0");
     screenWidth = GetScreenWidth();
     screenHeight = GetScreenHeight();
     ctx = GetImGuiContext();
@@ -67,7 +83,20 @@ void Load(char* file) {
 }
 
 void UpdateEditor() {
-
+    ImGui_Begin("Create Room", &showRoomCreator, ImGuiWindowFlags_None);
+    ImGui_TextUnformatted("Room ID:"); ImGui_SameLine();
+    ImGui_InputInt("##RoomID",&hypotheticalRoomID);
+    ImGui_TextUnformatted("Room Dimensions:"); 
+    ImGui_InputInt("##RoomW",&hypotheticalRoom.width); 
+    ImGui_InputInt("##RoomH",&hypotheticalRoom.height);
+    if(ImGui_Button("Create Room")) {
+        Room* new = NewRoom(arena,hypotheticalRoom.width, hypotheticalRoom.height, gridSize);
+        sprintf(roomName, "./assets/rooms/room%d", hypotheticalRoomID);
+        SaveRoom(new, roomName);
+        currentRoom = new;
+        roomID = hypotheticalRoomID;
+    }
+    ImGui_End();
     if(configPortal >= 0 && editorMode == EDITOR_PORTAL) {
         ImGui_Begin("Setup portal", NULL, ImGuiWindowFlags_None);
         ImGui_Text("Portal ID: %d", configPortal);
@@ -206,16 +235,35 @@ void UpdateDrawFrame(void) {
         PlayerSlopes(ecs, currentRoom);
     }
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L)) {
-        currentRoom = LoadRoom(arena, "./assets/rooms/temp_room");
-        ApplyRoom(ecs, currentRoom);
+        sprintf(roomName, "./assets/rooms/room%d",roomID);
+        currentRoom = LoadRoom(arena, roomName);
+        ApplyRoom(&ecs, currentRoom);
     }
-    if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S))
-        SaveRoom(currentRoom, "./assets/rooms/temp_room");
+    if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) {
+        currentRoom->entityData = ecs;
+        SaveRoom(currentRoom, roomName);
+    }
 
     BeginUI();
     EntityPanel(arena,ecs, &inspect, IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E));
     if(editorEnabled) {
         UpdateEditor();
+        ImGui_Begin("prefab menu", NULL, ImGuiWindowFlags_None);
+        if(inspect != NULL_ENTITY) {
+            if(ImGui_Button("Save Prefab")) {
+                ECS* entity = MakePrefab(arena, ecs, inspect);
+                SaveEntitiesToFile(entity, "./assets/prefabs/test");
+
+            }
+        }
+        if(ImGui_Button("Load Prefab")) {
+            ECS* test = InitECS(arena,10, COMPONENT_COUNT);
+            RegisterComponents(test, arena);
+            LoadEntitiesFromFile(test, arena, "./assets/prefabs/test");
+            MergePrefab(ecs, test);
+
+        }
+        ImGui_End();
     }
     EndUI();
 

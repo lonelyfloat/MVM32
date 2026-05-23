@@ -51,6 +51,7 @@ Room* LoadRoom(Arena* arena, const char* file) {
     int totalEntities = 0;
     fscanf(stream,"%x\n", &totalEntities);
     results->entityData = InitECS(arena, ROOM_MAX_ENTITIES, COMPONENT_COUNT);
+    RegisterComponents(results->entityData, arena);
     for(int i = 0; i < totalEntities; ++i) {
         Entity e = CreateEntity(results->entityData);
         DeserializeEntity(stream, arena, results->entityData, e);
@@ -77,6 +78,7 @@ void SaveRoom(Room* room, const char* file) {
         printf("ERROR: could not open ECS room %s\n", file);
         return;
     }
+
     fprintf(stream,"%x\n", room->gridSize);
     fprintf(stream,"%x,%x\n", room->width, room->height);
     for(int x = 0; x < room->width; ++x) {
@@ -258,8 +260,8 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
     }
 }
 
-void ApplyRoom(ECS* ecs, Room* room) {
-    ecs = room->entityData;
+void ApplyRoom(ECS** ecs, Room* room) {
+    *ecs = room->entityData;
 }
 
 const bool debugView = false;
