@@ -1,4 +1,5 @@
 #include "systems.h"
+#include <stdlib.h>
 #include "child.h"
 #include <raylib/raymath.h>
 #include "utils.h"
@@ -29,5 +30,54 @@ void CollisionSystem(ECS* ecs) {
                 hb->pos = Vector2Add(hb->pos, impulse->impulse);
             }
         }
+    }
+
+}
+
+typedef struct Order {
+    uint32_t i;
+    ZOrder z;
+} Order;
+
+int compare(const void* _a, const void* _b) {
+    // ascending order
+    int a = ((Order*)_a)->z.z;
+    int b = ((Order*)_b)->z.z;
+    return a - b;
+}
+
+// Z-Ordering
+void SetRenderOrder(ECS* ecs) {
+    if(ecs->blocks[ZORDER_COMPONENT].count == 0) return;
+    Order dataCopy[ecs->blocks[ZORDER_COMPONENT].count];
+    for(int i = 0; i < ecs->blocks[ZORDER_COMPONENT].count; ++i) {
+        dataCopy[i].i = i;
+        dataCopy[i].z =  IndexComponent(ecs, ZOrder, ZORDER_COMPONENT,i);
+    }
+    qsort(dataCopy, ecs->blocks[ZORDER_COMPONENT].count, sizeof(Order),compare);
+    for(int i = 0; i < ecs->blocks[ZORDER_COMPONENT].count; ++i) {
+        uint32_t curr = i;
+        uint32_t next = dataCopy[curr].i;
+        while(curr != next) {
+            // Swap
+            EntityIndex currSparse = ecs->blocks[ZORDER_COMPONENT].indices[dataCopy[curr].i];
+            Entity currDense = ecs->blocks[ZORDER_COMPONENT].entities[ecs->blocks[ZORDER_COMPONENT].indices[dataCopy[curr].i]];
+            ZOrder currZ = dataCopy[currSparse].z;
+            ecs->blocks[ZORDER_COMPONENT].indices[dataCopy[curr].i] = ecs->blocks[ZORDER_COMPONENT].indices[next]; 
+            ecs->blocks[ZORDER_COMPONENT].entities[currSparse] = ecs->blocks[ZORDER_COMPONENT].indices[next]; 
+            ((ZOrder*)ecs->blocks[ZORDER_COMPONENT].components)[currSparse] = ((ZOrder*)ecs->blocks[ZORDER_COMPONENT].components)[next];
+            ecs->blocks[ZORDER_COMPONENT].entities[ecs->blocks[ZORDER_COMPONENT].indices[next]] = currDense; 
+            ecs->blocks[ZORDER_COMPONENT].indices[next] = currSparse; 
+            ((ZOrder*)ecs->blocks[ZORDER_COMPONENT].components)[next] = currZ; 
+            // End swap
+            dataCopy[curr].i = curr;
+            curr = next;
+            next = dataCopy[curr].i;
+        }
+    }
+
+    for(int i = 0; i < ecs->blocks[ZORDER_COMPONENT].count; ++i) {
+        ZOrder z = IndexComponent(ecs, ZOrder, ZORDER_COMPONENT, i);
+        printf("z: %d\n", z.z);
     }
 }

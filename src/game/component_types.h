@@ -24,6 +24,9 @@ typedef Vector2 Offset;
     X(float, x)\
     X(float, y)
 
+#define ZORDER(X)\
+    X(int, z)
+
 #define HEALTH(X)\
     X(int, health)\
     X(int, maxHealth)\
@@ -52,7 +55,8 @@ typedef Vector2 Offset;
     init(IKNode, IK_NODE)\
     init(IKRoot, IK_ROOT)\
     init(IKLeg, IK_LEG)\
-    init(Offset, OFFSET, STRUCT_DEFINED)
+    init(Offset, OFFSET, STRUCT_DEFINED)\
+    init(ZOrder, ZORDER)
 
 COMPONENT_HEADER(COMPONENTS)
 

@@ -44,6 +44,8 @@ enum EditorMode {
 Vector2 editorCursor;
 Vector2 portalMin = (Vector2){};
 
+int teleportID = 0;
+
 bool editorEnabled = false;
 int configPortal = -1;
 bool dragging = false;
@@ -61,9 +63,14 @@ void Init(Arena* gameArena) {
     ecs = InitECS(arena, 100, COMPONENT_COUNT);
     RegisterComponents(ecs, arena);
     InitAssets(gameArena, 2);
-    LoadAsset("./assets/temp_tileset.png", "TempTileset", ASSET_TYPE_TEXTURE);
+    LoadAsset("./assets/lab_tileset.png", "TempTileset", ASSET_TYPE_TEXTURE);
     allRooms = ArenaAlloc(gameArena, sizeof(Room)*totalRooms);
-    allRooms[0] = *NewRoom(arena, screenWidth/gridSize + 2,screenHeight/gridSize + 2,50);
+    for(int i = 0; i < totalRooms; ++i) {
+        sprintf(roomName, "./assets/rooms/room%d", i);
+        Room* room = LoadRoom(arena, roomName);
+        SetRenderOrder(room->entityData);
+        allRooms[i] = *room;
+    }
     currentRoom = &allRooms[0];
     roomID = 0;
     sprintf(roomName, "./assets/rooms/room0");
@@ -83,6 +90,14 @@ void Load(char* file) {
 }
 
 void UpdateEditor() {
+    ImGui_Begin("Teleport", NULL, ImGuiWindowFlags_None);
+    ImGui_TextUnformatted("Room ID:"); ImGui_SameLine();
+    ImGui_InputInt("##RoomID",&teleportID);
+    if(ImGui_Button("Teleport")) {
+        roomID = teleportID;
+        currentRoom = &allRooms[teleportID];
+    }
+    ImGui_End();
     ImGui_Begin("Create Room", &showRoomCreator, ImGuiWindowFlags_None);
     ImGui_TextUnformatted("Room ID:"); ImGui_SameLine();
     ImGui_InputInt("##RoomID",&hypotheticalRoomID);
@@ -205,15 +220,16 @@ void DrawEditor() {
     float guiGridSize = gridSize*worldCamera.zoom;
     float guiScreenWidth = screenWidth - offset.x;
     float guiScreenHeight = screenHeight - offset.y;
+    Color gridColor = ColorAlpha(BLUE, 0.5);
     for(int x = 0; x < (int)(guiScreenWidth / guiGridSize); ++x) {
-        DrawLine(offset.x + x*guiGridSize, offset.y, offset.x + x*guiGridSize, offset.y+guiScreenHeight, GRAY);
+        DrawLine(offset.x + x*guiGridSize, offset.y, offset.x + x*guiGridSize, offset.y+guiScreenHeight, gridColor);
     }
     for(int y = 0; y < (int)(guiScreenHeight / guiGridSize); ++y) {
-        DrawLine(offset.x, offset.y + y*guiGridSize, offset.x+guiScreenWidth, offset.y + y * guiGridSize, GRAY);
+        DrawLine(offset.x, offset.y + y*guiGridSize, offset.x+guiScreenWidth, offset.y + y * guiGridSize, gridColor);
     }
 
     BeginMode2D(worldCamera);
-    DrawRectangleLinesEx((Rectangle){0,0,currentRoom->width*gridSize,currentRoom->height*gridSize},2, RED);
+    DrawRectangleLinesEx((Rectangle){0,0,currentRoom->width*gridSize,currentRoom->height*gridSize},10, RED);
     for(int i = 0; i < currentRoom->portalCount; ++i) {
         DrawRectangleRec(currentRoom->portals[i].bounds, ColorAlpha(GREEN, 0.5));
     }
@@ -272,7 +288,7 @@ void UpdateDrawFrame(void) {
     // Draw
     // ---------------------------------------------------------------------------------
     BeginDrawing();
-        ClearBackground(RAYWHITE);
+        ClearBackground(BLACK);
         BeginMode2D(worldCamera);
         Texture2D* tileset = GetAsset("TempTileset");
         DrawRoomTiles(currentRoom, tileset);

@@ -1,7 +1,3 @@
-# Todo: High Priority: 
-- Room editing w/ camera panning/control
-- Room / level creation utilities (door 'portals' etc. to change what room the player is in)
-
 # List of everything I NEED to do (MVP):
 ## Design
 - Setting considerations - where is this taking place
@@ -11,6 +7,7 @@
 - Create the world (literally) - try for at least 10 rooms of varying sizes / shapes / challenges
 - Design 3 enemy types & their "health puzzles"
 - Design boss (at least 2 'stages')
+- Abilities --> Hover & 'Drill'
 ## Art
 - Player body and gun (IK arms & legs)
 - Assets for 3 enemies
@@ -35,7 +32,7 @@
 - Program ability aquisition states
 - ImGui 
     - load/save to and from specific files in a menu
-    - Room / level creation utilities (door 'portals' etc.)
+    - Room / level creation utilities (door 'portals' etc.) DONE
 - Asset integration of art, music, sfx, etc.
 
 # Nice to haves

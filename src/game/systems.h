@@ -6,4 +6,6 @@
 void VelocitySystem(ECS* ecs);
 void CollisionSystem(ECS* ecs);
 
+void SetRenderOrder(ECS* ecs);
+
 #endif
