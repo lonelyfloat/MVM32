@@ -71,7 +71,6 @@ void Init(Arena* gameArena) {
     for(int i = 0; i < totalRooms; ++i) {
         sprintf(roomName, "./assets/rooms/room%d", i);
         Room* room = LoadRoom(arena, roomName);
-        SetRenderOrder(room->entityData);
         allRooms[i] = *room;
     }
     currentRoom = &allRooms[0];
@@ -81,6 +80,7 @@ void Init(Arena* gameArena) {
 
     LoadEntitiesFromFile(player, arena, "./assets/prefabs/player");
     MergePrefab(ecs, player);
+    SetRenderOrder(ecs);
 
     screenWidth = GetScreenWidth();
     screenHeight = GetScreenHeight();
@@ -89,13 +89,26 @@ void Init(Arena* gameArena) {
 }
 
 void Save(char* file) {
-    SaveEntitiesToFile(ecs, file);
+    Entity playerE = NULL_ENTITY;
+    for(int i = 0; i < ecs->blocks[PLAYER_COMPONENT].count; ++i) {
+        playerE = GetEntity(ecs, PLAYER_COMPONENT, i);
+    }
+    if(playerE != NULL_ENTITY) {
+        MakePrefab(player, arena, ecs, playerE);
+        SaveEntitiesToFile(player, "./assets/prefabs/player");
+        KillPrefab(ecs, playerE);
+    }
+    currentRoom->entityData = ecs;
+    sprintf(roomName, "./assets/rooms/room%d",roomID);
+    SaveRoom(currentRoom, roomName);
+    MergePrefab(ecs, player);
 }
 
 void Load(char* file) {
     sprintf(roomName, "./assets/rooms/room%d",roomID);
     currentRoom = LoadRoom(arena, roomName);
     ApplyRoom(&ecs, currentRoom);
+    MergePrefab(ecs, player);
 }
 
 void UpdateEditor() {
@@ -221,6 +234,7 @@ void UpdateEditor() {
 
 void DrawElement(int i) {
     Entity e = GetEntity(ecs, ZORDER_COMPONENT, i);
+    // printf("e: %x\n", e);
     if(!HasComponent(ecs, e, HITBOX_COMPONENT)) return;
     if(HasComponent(ecs, e, SPRITE_COMPONENT)) {
         Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
@@ -282,10 +296,30 @@ void UpdateDrawFrame(void) {
     if(!editorEnabled) {
         PlayerSystem(ecs, currentRoom);
         VelocitySystem(ecs);
-        ResolveIK(ecs,100);
+
+        for(int i = 0; i < ecs->blocks[IK_POLE_COMPONENT].count; ++i) {
+            Entity e = GetEntity(ecs, IK_POLE_COMPONENT, i);
+            IKPole pole = IndexComponent(ecs, IKPole, IK_POLE_COMPONENT, i);
+            if(!HasComponents(ecs, e, 2, IK_ROOT_COMPONENT, RELATIONSHIP_COMPONENT)) continue;
+            Relationship* r = GetComponent(ecs, e, RELATIONSHIP_COMPONENT);
+            Entity child = r->first;
+            while(child != NULL_ENTITY) {
+                if(!HasComponent(ecs, child, RELATIONSHIP_COMPONENT)) break;
+                r = GetComponent(ecs, child, RELATIONSHIP_COMPONENT);
+                if(!HasComponents(ecs, child,2, HITBOX_COMPONENT, IK_NODE_COMPONENT)) {
+                    child = r->next;
+                    continue;
+                }
+                Hitbox* hb = GetComponent(ecs, child, HITBOX_COMPONENT);
+                hb->pos = Vector2Add(hb->pos, Vector2Scale(pole, 20));
+                child = r->next;
+            }
+        }
         IKLegSystem(ecs,currentRoom);
+        ResolveIK(ecs,100);
         ResolveRoomCollisions(ecs, currentRoom);
         PlayerSlopes(ecs, currentRoom);
+
     }
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L)) {
         sprintf(roomName, "./assets/rooms/room%d",roomID);
@@ -331,16 +365,17 @@ void UpdateDrawFrame(void) {
             DrawElement(i);
         }
         DrawRoomTiles(currentRoom, tileset);
+        // printf("START\n");
         for(int i = stopIdx; i < ecs->blocks[ZORDER_COMPONENT].count; ++i) {
             DrawElement(i);
         }
-        for(int i = 0; i < ecs->blocks[DEBUG_SHAPE_COMPONENT].count; ++i) {
-            Entity e = GetEntity(ecs, DEBUG_SHAPE_COMPONENT, i);
-            if(!HasComponent(ecs, e, HITBOX_COMPONENT)) continue;
-            Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
-            DebugShape d = IndexComponent(ecs, DebugShape,DEBUG_SHAPE_COMPONENT, i);
-            DrawRectangleRec(HitboxToRect(*hb), d.col);
-        }
+        // for(int i = 0; i < ecs->blocks[DEBUG_SHAPE_COMPONENT].count; ++i) {
+        //     Entity e = GetEntity(ecs, DEBUG_SHAPE_COMPONENT, i);
+        //     if(!HasComponent(ecs, e, HITBOX_COMPONENT)) continue;
+        //     Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
+        //     DebugShape d = IndexComponent(ecs, DebugShape,DEBUG_SHAPE_COMPONENT, i);
+        //     DrawRectangleRec(HitboxToRect(*hb), d.col);
+        // }
         EndMode2D();
         if(editorEnabled) {
             DrawEditor();

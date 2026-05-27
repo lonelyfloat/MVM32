@@ -63,7 +63,7 @@ void PlayerSlopesInternal(ECS* ecs, Entity e, Room* room) {
         player->leftSlope = false;
     }
     if(player->leftSlope) {
-        if(fabs(hb->pos.y - leftRaycast.point.y) > 100) {
+        if(fabs(hb->pos.y - leftRaycast.point.y) > 150) {
             player->leftSlope = false;
         } else {
             hb->pos.y = leftRaycast.point.y - hb->scale.y;
@@ -97,7 +97,7 @@ void PlayerSlopesInternal(ECS* ecs, Entity e, Room* room) {
         player->rightSlope = false;
     }
     if(player->rightSlope) {
-        if(fabs(hb->pos.y - rightRaycast.point.y) > 100) {
+        if(fabs(hb->pos.y - rightRaycast.point.y) > 150) {
             player->rightSlope = false;
         } else {
             hb->pos.y = rightRaycast.point.y - hb->scale.y;
@@ -295,23 +295,6 @@ void PlayerSystem(ECS* ecs, Room* room) {
         Entity e = GetEntity(ecs, PLAYER_COMPONENT, i);
         if(!HasComponents(ecs, e, 4, HITBOX_COMPONENT, VELOCITY_COMPONENT, SPRITE_COMPONENT, ACTOR_COMPONENT)) continue;
         UpdatePlayer(ecs, e, room);
-        Hitbox* playerH = GetComponent(ecs, e, HITBOX_COMPONENT);
-        // update leg positions
-        if(!HasComponent(ecs, e, RELATIONSHIP_COMPONENT)) continue;
-        Relationship* r = GetComponent(ecs, e, RELATIONSHIP_COMPONENT);
-        Entity child = r->first;
-        while(child != NULL_ENTITY) {
-            if(!HasComponent(ecs, child, RELATIONSHIP_COMPONENT)) break;
-            r = GetComponent(ecs, child, RELATIONSHIP_COMPONENT);
-            if(!HasComponents(ecs, child,3, HITBOX_COMPONENT, IK_LEG_COMPONENT, OFFSET_COMPONENT)) {
-                child = r->next;
-                continue;
-            }
-            Offset* o = GetComponent(ecs, child, OFFSET_COMPONENT);
-            Hitbox* hb = GetComponent(ecs, child, HITBOX_COMPONENT);
-            hb->pos = Vector2Add(playerH->pos, *o);
-            child = r->next;
-        }
     }
 }
 
@@ -320,6 +303,26 @@ void PlayerSlopes(ECS* ecs, Room* room) {
         Entity e = GetEntity(ecs, PLAYER_COMPONENT, i);
         if(!HasComponents(ecs, e, 4, HITBOX_COMPONENT, VELOCITY_COMPONENT, SPRITE_COMPONENT, ACTOR_COMPONENT)) continue;
         PlayerSlopesInternal(ecs,e,room);
+        Hitbox* playerH = GetComponent(ecs, e, HITBOX_COMPONENT);
+        Sprite* playerS = GetComponent(ecs, e, SPRITE_COMPONENT);
+        // update leg positions
+        if(!HasComponent(ecs, e, RELATIONSHIP_COMPONENT)) continue;
+        Relationship* r = GetComponent(ecs, e, RELATIONSHIP_COMPONENT);
+        Entity child = r->first;
+        while(child != NULL_ENTITY) {
+            if(!HasComponent(ecs, child, RELATIONSHIP_COMPONENT)) break;
+            r = GetComponent(ecs, child, RELATIONSHIP_COMPONENT);
+            if(!HasComponents(ecs, child,4, HITBOX_COMPONENT, IK_LEG_COMPONENT, OFFSET_COMPONENT, IK_POLE_COMPONENT)) {
+                child = r->next;
+                continue;
+            }
+            Offset* o = GetComponent(ecs, child, OFFSET_COMPONENT);
+            Hitbox* hb = GetComponent(ecs, child, HITBOX_COMPONENT);
+            IKPole* p = GetComponent(ecs, child, IK_POLE_COMPONENT);
+            hb->pos = Vector2Add(playerH->pos, *o);
+            p->x = playerS->flipped ? -1 : 1;
+            child = r->next;
+        }
     }
 }
 

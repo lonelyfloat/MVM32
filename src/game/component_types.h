@@ -24,6 +24,11 @@ typedef Vector2 Offset;
     X(float, x)\
     X(float, y)
 
+typedef Vector2 IKPole;
+#define IK_POLE(X)\
+    X(float, x)\
+    X(float, y)
+
 #define ZORDER(X)\
     X(int, z)
 
@@ -56,7 +61,8 @@ typedef Vector2 Offset;
     init(IKRoot, IK_ROOT)\
     init(IKLeg, IK_LEG)\
     init(Offset, OFFSET, STRUCT_DEFINED)\
-    init(ZOrder, ZORDER)
+    init(ZOrder, ZORDER)\
+    init(IKPole, IK_POLE, STRUCT_DEFINED) 
 
 COMPONENT_HEADER(COMPONENTS)
 

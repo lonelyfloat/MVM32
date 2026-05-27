@@ -58,17 +58,22 @@ void SetRenderOrder(ECS* ecs) {
     for(int i = 0; i < ecs->blocks[ZORDER_COMPONENT].count; ++i) {
         uint32_t curr = i;
         uint32_t next = dataCopy[curr].i;
+
         while(curr != next) {
             // Swap
-            EntityIndex currSparse = ecs->blocks[ZORDER_COMPONENT].indices[dataCopy[curr].i];
-            Entity currDense = ecs->blocks[ZORDER_COMPONENT].entities[ecs->blocks[ZORDER_COMPONENT].indices[dataCopy[curr].i]];
-            ZOrder currZ = dataCopy[currSparse].z;
-            ecs->blocks[ZORDER_COMPONENT].indices[dataCopy[curr].i] = ecs->blocks[ZORDER_COMPONENT].indices[next]; 
-            ecs->blocks[ZORDER_COMPONENT].entities[currSparse] = ecs->blocks[ZORDER_COMPONENT].indices[next]; 
-            ((ZOrder*)ecs->blocks[ZORDER_COMPONENT].components)[currSparse] = ((ZOrder*)ecs->blocks[ZORDER_COMPONENT].components)[next];
-            ecs->blocks[ZORDER_COMPONENT].entities[ecs->blocks[ZORDER_COMPONENT].indices[next]] = currDense; 
-            ecs->blocks[ZORDER_COMPONENT].indices[next] = currSparse; 
-            ((ZOrder*)ecs->blocks[ZORDER_COMPONENT].components)[next] = currZ; 
+            uint32_t currIdx = dataCopy[curr].i;
+            uint32_t nextIdx = dataCopy[next].i;
+            Entity tempDense = ecs->blocks[ZORDER_COMPONENT].entities[currIdx];
+            Entity nextDense = ecs->blocks[ZORDER_COMPONENT].entities[nextIdx];
+            EntityIndex tempSparse = ecs->blocks[ZORDER_COMPONENT].indices[GetID(tempDense)];
+            EntityIndex nextSparse = ecs->blocks[ZORDER_COMPONENT].indices[GetID(nextDense)];
+            ZOrder tempZ = ((ZOrder*)ecs->blocks[ZORDER_COMPONENT].components)[tempSparse];
+            ecs->blocks[ZORDER_COMPONENT].entities[currIdx] = ecs->blocks[ZORDER_COMPONENT].entities[nextIdx];
+            ecs->blocks[ZORDER_COMPONENT].indices[GetID(tempDense)] = ecs->blocks[ZORDER_COMPONENT].indices[GetID(nextDense)];
+            ((ZOrder*)ecs->blocks[ZORDER_COMPONENT].components)[tempSparse] = ((ZOrder*)ecs->blocks[ZORDER_COMPONENT].components)[nextSparse];
+            ecs->blocks[ZORDER_COMPONENT].entities[nextIdx] = tempDense;
+            ecs->blocks[ZORDER_COMPONENT].indices[GetID(nextDense)] = tempSparse;
+            ((ZOrder*)ecs->blocks[ZORDER_COMPONENT].components)[nextSparse] = tempZ;
             // End swap
             dataCopy[curr].i = curr;
             curr = next;

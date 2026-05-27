@@ -206,27 +206,28 @@ void MakePrefab(ECS* prefab, Arena* arena, ECS* ecs, Entity e) {
                 if(r->first != NULL_ENTITY) {
                     Entity newidx = sparse[GetID(r->first)];
                     if(sparse[GetID(r->first)] != NULL_ENTITY) {
-                        r->first = newidx;
+                        r->first = ConstructEntity(newidx,0);
                     }
                 }
                 if(r->parent != NULL_ENTITY) {
                     Entity newidx = sparse[GetID(r->parent)];
                     if(sparse[GetID(r->parent)] != NULL_ENTITY) {
-                        r->parent = newidx;
+                        r->parent = ConstructEntity(newidx, 0);
                     }
                 }
                 if(r->next != NULL_ENTITY) {
                     Entity newidx = sparse[GetID(r->next)];
                     if(sparse[GetID(r->next)] != NULL_ENTITY) {
-                        r->next = newidx;
+                        r->next = ConstructEntity(newidx, 0);
                     }
                 }
                 if(r->previous != NULL_ENTITY) {
                     Entity newidx = sparse[GetID(r->previous)];
                     if(sparse[GetID(r->previous)] != NULL_ENTITY) {
-                        r->previous = newidx;
+                        r->previous = ConstructEntity(newidx,0);
                     }
                 }
+                printf("%x,%x,%x,%x\n", r->first, r->parent, r->next, r->previous);
             }
         }
     }
@@ -264,7 +265,6 @@ void MergePrefab(ECS* world, ECS* prefab) {
                 if(r->previous != NULL_ENTITY) {
                     r->previous = stack[GetID(r->previous)];
                 }
-                printf("%x,%x,%x,%x\n", r->first, r->parent, r->next, r->previous);
             }
         }
     }
