@@ -62,8 +62,11 @@ void Init(Arena* gameArena) {
     printf("Initializing game...\n");
     ecs = InitECS(arena, 100, COMPONENT_COUNT);
     RegisterComponents(ecs, arena);
-    InitAssets(gameArena, 2);
-    LoadAsset("./assets/lab_tileset.png", "TempTileset", ASSET_TYPE_TEXTURE);
+    player = InitECS(arena, 20, COMPONENT_COUNT);
+    RegisterComponents(player, arena);
+    InitAssets(gameArena, 10);
+    LoadAsset("./assets/lab_tileset.png", "LabTileset", ASSET_TYPE_TEXTURE);
+    LoadAsset("./assets/player.png", "Player", ASSET_TYPE_TEXTURE);
     allRooms = ArenaAlloc(gameArena, sizeof(Room)*totalRooms);
     for(int i = 0; i < totalRooms; ++i) {
         sprintf(roomName, "./assets/rooms/room%d", i);
@@ -73,7 +76,12 @@ void Init(Arena* gameArena) {
     }
     currentRoom = &allRooms[0];
     roomID = 0;
+    ApplyRoom(&ecs, currentRoom);
     sprintf(roomName, "./assets/rooms/room0");
+
+    LoadEntitiesFromFile(player, arena, "./assets/prefabs/player");
+    MergePrefab(ecs, player);
+
     screenWidth = GetScreenWidth();
     screenHeight = GetScreenHeight();
     ctx = GetImGuiContext();
@@ -85,8 +93,9 @@ void Save(char* file) {
 }
 
 void Load(char* file) {
-    NukeECS(ecs);
-    LoadEntitiesFromFile(ecs, arena, file);
+    sprintf(roomName, "./assets/rooms/room%d",roomID);
+    currentRoom = LoadRoom(arena, roomName);
+    ApplyRoom(&ecs, currentRoom);
 }
 
 void UpdateEditor() {
@@ -130,12 +139,12 @@ void UpdateEditor() {
     if(ImGui_Button("Portal")) {
         editorMode = EDITOR_PORTAL;
     }
-    ImGui_Text("dragging: %s", dragging ? "true" : "false");
     ImGui_End();
     // 
     // Zoom based on mouse wheel
     float wheel = GetMouseWheelMove();
-    if (wheel != 0)
+    ImGuiIO* io = ImGui_GetIO();
+    if (wheel != 0 && !io->WantCaptureMouse)
     {
         // Get the world point that is under the mouse
         Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), worldCamera);
@@ -154,7 +163,6 @@ void UpdateEditor() {
     editorCursor.x = floor(mousePos.x/gridSize);
     editorCursor.y = floor(mousePos.y/gridSize);
 
-    ImGuiIO* io = ImGui_GetIO();
     if(!io->WantCaptureMouse) {
         switch(editorMode) {
             case EDITOR_TERRAIN:
@@ -211,6 +219,35 @@ void UpdateEditor() {
     }
 }
 
+void DrawElement(int i) {
+    Entity e = GetEntity(ecs, ZORDER_COMPONENT, i);
+    if(!HasComponent(ecs, e, HITBOX_COMPONENT)) return;
+    if(HasComponent(ecs, e, SPRITE_COMPONENT)) {
+        Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
+        Sprite* spr = GetComponent(ecs, e, SPRITE_COMPONENT);
+        Texture2D* asset = GetAsset(spr->texture.key);
+        if(spr->texture.length != 0) {
+            DrawTexturePro(*asset, (Rectangle){0,0, (spr->flipped ? -1 : 1)*asset->width, asset->height}, (Rectangle){hb->pos.x, hb->pos.y, hb->scale.x, hb->scale.y}, (Vector2){}, 0, WHITE);
+        }
+    }
+    else if(HasComponents(ecs, e, 2, IK_LEG_COMPONENT, DEBUG_SHAPE_COMPONENT)) {
+        if(!HasComponent( ecs, e, RELATIONSHIP_COMPONENT)) return;
+        Relationship* r = GetComponent(ecs, e, RELATIONSHIP_COMPONENT);
+        DebugShape *d = GetComponent(ecs, e, DEBUG_SHAPE_COMPONENT);
+        Entity last = e;
+        Entity head = r->first;
+        while(head != NULL_ENTITY) {
+            if(!HasComponent( ecs, head, RELATIONSHIP_COMPONENT)) break;
+            Hitbox* hb = GetComponent(ecs, head, HITBOX_COMPONENT);
+            Hitbox* lastHB = GetComponent(ecs, last, HITBOX_COMPONENT);
+            DrawLineEx(lastHB->pos, hb->pos, 10, d->col);
+            r = GetComponent(ecs, head, RELATIONSHIP_COMPONENT);
+            last = head;
+            head = r->next;
+        }
+    }
+}
+
 
 void DrawEditor() {
     Vector2 o = GetWorldToScreen2D((Vector2){0,0}, worldCamera);
@@ -256,30 +293,24 @@ void UpdateDrawFrame(void) {
         ApplyRoom(&ecs, currentRoom);
     }
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) {
+        Entity playerE = NULL_ENTITY;
+        for(int i = 0; i < ecs->blocks[PLAYER_COMPONENT].count; ++i) {
+            playerE = GetEntity(ecs, PLAYER_COMPONENT, i);
+        }
+        if(playerE != NULL_ENTITY) {
+            MakePrefab(player, arena, ecs, playerE);
+            SaveEntitiesToFile(player, "./assets/prefabs/player");
+            KillPrefab(ecs, playerE);
+        }
         currentRoom->entityData = ecs;
         SaveRoom(currentRoom, roomName);
+        MergePrefab(ecs, player);
     }
 
     BeginUI();
     EntityPanel(arena,ecs, &inspect, IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_E));
     if(editorEnabled) {
         UpdateEditor();
-        ImGui_Begin("prefab menu", NULL, ImGuiWindowFlags_None);
-        if(inspect != NULL_ENTITY) {
-            if(ImGui_Button("Save Prefab")) {
-                ECS* entity = MakePrefab(arena, ecs, inspect);
-                SaveEntitiesToFile(entity, "./assets/prefabs/test");
-
-            }
-        }
-        if(ImGui_Button("Load Prefab")) {
-            ECS* test = InitECS(arena,10, COMPONENT_COUNT);
-            RegisterComponents(test, arena);
-            LoadEntitiesFromFile(test, arena, "./assets/prefabs/test");
-            MergePrefab(ecs, test);
-
-        }
-        ImGui_End();
     }
     EndUI();
 
@@ -290,8 +321,19 @@ void UpdateDrawFrame(void) {
     BeginDrawing();
         ClearBackground(BLACK);
         BeginMode2D(worldCamera);
-        Texture2D* tileset = GetAsset("TempTileset");
+        Texture2D* tileset = GetAsset("LabTileset");
+        int stopIdx = 0;
+        for(int i = 0; i < ecs->blocks[ZORDER_COMPONENT].count; ++i) {
+            if(IndexComponent(ecs, ZOrder, ZORDER_COMPONENT,i).z > 0) { 
+                stopIdx = i;
+                break;
+            }
+            DrawElement(i);
+        }
         DrawRoomTiles(currentRoom, tileset);
+        for(int i = stopIdx; i < ecs->blocks[ZORDER_COMPONENT].count; ++i) {
+            DrawElement(i);
+        }
         for(int i = 0; i < ecs->blocks[DEBUG_SHAPE_COMPONENT].count; ++i) {
             Entity e = GetEntity(ecs, DEBUG_SHAPE_COMPONENT, i);
             if(!HasComponent(ecs, e, HITBOX_COMPONENT)) continue;

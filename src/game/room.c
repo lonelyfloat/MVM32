@@ -88,7 +88,15 @@ void SaveRoom(Room* room, const char* file) {
         fprintf(stream,"\n");
     }
     ECS* ecs = room->entityData;
-    fprintf(stream,"%x\n", ecs->totalEntities);
+    int entitiesAlive = 0;
+    for(uint16_t en = 0; en < ecs->totalEntities; ++en) {
+        if(en != GetID(ecs->entities[en])) { 
+            continue;
+        }
+        entitiesAlive++;
+    }
+
+    fprintf(stream,"%x\n", entitiesAlive);
     for(uint16_t en = 0; en < ecs->totalEntities; ++en) {
         if(en != GetID(ecs->entities[en])) {
             continue;

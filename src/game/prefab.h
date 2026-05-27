@@ -6,7 +6,10 @@
 void SaveEntityTree(ECS* ecs, Entity e, const char* filePath);
 void LoadEntityTree(ECS* ecs, Arena* arena, const char* filePath);
 
-ECS* MakePrefab(Arena* arena, ECS* ecs, Entity e);
+void MakePrefab(ECS* prefab, Arena* arena, ECS* ecs, Entity e);
 void MergePrefab(ECS* world, ECS* prefab);
+
+// Kills an entity and all of its children
+void KillPrefab(ECS* world, Entity e);
 
 #endif

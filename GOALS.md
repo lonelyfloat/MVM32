@@ -1,3 +1,7 @@
+# TODO (asap): 
+- Fix weird prefab problem
+- Make player able to traverse The World
+
 # List of everything I NEED to do (MVP):
 ## Design
 - Setting considerations - where is this taking place

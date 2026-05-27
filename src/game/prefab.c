@@ -1,6 +1,7 @@
 #include "component_types.h"
 #include <stdlib.h>
 #include <string.h>
+#include "prefab.h"
 
 void SaveEntityTree_(ECS* ecs, Entity e, const char* filePath, Entity* buffer, int* idx) {
     Entity current = e;
@@ -179,8 +180,8 @@ void MakePrefab_(ECS* ecs, Entity e, Entity* buffer, int* idx) {
 }
 
 
-ECS* MakePrefab(Arena* arena, ECS* ecs, Entity e) {
-    ECS* prefab;
+void MakePrefab(ECS* prefab, Arena* arena, ECS* ecs, Entity e) {
+    NukeECS(prefab);
     int count = 0;
     Entity stack[ecs->maxEntities] = {};
     EntityIndex sparse[ecs->maxEntities] = {};
@@ -191,8 +192,6 @@ ECS* MakePrefab(Arena* arena, ECS* ecs, Entity e) {
     for(int i = 0; i < count; ++i) {
         sparse[GetID(stack[i])] = i;
     }
-    prefab = InitECS(arena, count, ecs->componentCount);
-    RegisterComponents(prefab, arena);
     for(uint16_t en = 0; en < count; ++en) {
         Entity worldEntity = stack[en];
         Entity prefabEntity = CreateEntity(prefab);
@@ -210,6 +209,12 @@ ECS* MakePrefab(Arena* arena, ECS* ecs, Entity e) {
                         r->first = newidx;
                     }
                 }
+                if(r->parent != NULL_ENTITY) {
+                    Entity newidx = sparse[GetID(r->parent)];
+                    if(sparse[GetID(r->parent)] != NULL_ENTITY) {
+                        r->parent = newidx;
+                    }
+                }
                 if(r->next != NULL_ENTITY) {
                     Entity newidx = sparse[GetID(r->next)];
                     if(sparse[GetID(r->next)] != NULL_ENTITY) {
@@ -222,16 +227,9 @@ ECS* MakePrefab(Arena* arena, ECS* ecs, Entity e) {
                         r->previous = newidx;
                     }
                 }
-                if(r->parent != NULL_ENTITY) {
-                    Entity newidx = sparse[GetID(r->parent)];
-                    if(sparse[GetID(r->parent)] != NULL_ENTITY) {
-                        r->parent = newidx;
-                    }
-                }
             }
         }
     }
-    return prefab;
 }
 
 void MergePrefab(ECS* world, ECS* prefab) {
@@ -245,28 +243,41 @@ void MergePrefab(ECS* world, ECS* prefab) {
         Entity worldEntity = stack[en];
         for(int i = 0; i < world->componentCount; ++i) {
             if(!HasComponent(prefab,stackEntity,i)) continue;
-            // AddEmptyComponent(arena, world, worldEntity, i);
-            void* worldComp = GetComponent(world, worldEntity, i);
-            void* prefabComp = GetComponent(prefab, stackEntity, i);
-            memcpy(worldComp, prefabComp,prefab->blocks[i].componentSize);
             world->blocks[i].entities[world->blocks[i].count] = worldEntity;
             world->blocks[i].indices[GetID(worldEntity)] = world->blocks[i].count;
             world->blocks[i].count += 1;
+            void* worldComp = GetComponent(world, worldEntity, i);
+            void* prefabComp = GetComponent(prefab, stackEntity, i);
+            memcpy(worldComp, prefabComp,world->blocks[i].componentSize);
             if(i == RELATIONSHIP_COMPONENT) {
-                Relationship* r = worldComp;
+                Relationship* r = GetComponent(world, worldEntity, RELATIONSHIP_COMPONENT);
+                // printf("%x,%x,%x,%x\n", r->first, r->parent, r->next, r->previous);
                 if(r->first != NULL_ENTITY) {
-                    r->first = stack[r->first];
-                }
+                    r->first = stack[GetID(r->first)];
+                } 
                 if(r->parent != NULL_ENTITY) {
-                    r->parent = stack[r->parent];
+                    r->parent = stack[GetID(r->parent)];
                 }
                 if(r->next != NULL_ENTITY) {
-                    r->next = stack[r->next];
+                    r->next = stack[GetID(r->next)];
                 }
                 if(r->previous != NULL_ENTITY) {
-                    r->previous = stack[r->previous];
+                    r->previous = stack[GetID(r->previous)];
                 }
+                printf("%x,%x,%x,%x\n", r->first, r->parent, r->next, r->previous);
             }
         }
     }
+}
+
+void KillPrefab(ECS* world, Entity e) {
+    if(e == NULL_ENTITY) return;
+    if(!HasComponent(world, e, RELATIONSHIP_COMPONENT)) {
+        KillEntity(world,e);
+        return;
+    }
+    Relationship* r = GetComponent(world, e, RELATIONSHIP_COMPONENT);
+    KillPrefab(world, r->first);
+    KillPrefab(world, r->next);
+    KillEntity(world, e);
 }

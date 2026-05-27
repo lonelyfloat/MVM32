@@ -75,9 +75,4 @@ void SetRenderOrder(ECS* ecs) {
             next = dataCopy[curr].i;
         }
     }
-
-    for(int i = 0; i < ecs->blocks[ZORDER_COMPONENT].count; ++i) {
-        ZOrder z = IndexComponent(ecs, ZOrder, ZORDER_COMPONENT, i);
-        printf("z: %d\n", z.z);
-    }
 }
