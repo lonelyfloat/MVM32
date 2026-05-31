@@ -57,6 +57,7 @@ int main(void) {
         calls.update();
     }
     #endif
+
     CloseWindow();        
     printf("Closing game...\n");
     DestroyArena(gameArena);
