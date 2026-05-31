@@ -18,6 +18,7 @@
 const int initialScreenWidth = 800;
 const int initialScreenHeight = 600;
 
+
 ReloadCallbacks calls;
 
 Arena* gameArena;

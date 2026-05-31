@@ -56,9 +56,9 @@ bool CheckCollisionPointWorld(Vector2 pt, World* world);
 /* Format:
 %x ; gridSize
 %x,%x ; dimensions
-%x %x ... ; x dimension times
-%x ; number of entities
-; standard ECS serialization system
+%x %x ... ; x dimension
+%x roomcount
+%f,%f,%f,%f room bound
 
 */
 

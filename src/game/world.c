@@ -1,30 +1,28 @@
 #include "world.h"
-#include <serialize.h>
 #include "utils.h"
 #include <raylib/raymath.h>
 
 #define MAX_ROOMS 20
-    
-// World* NewWorld(Arena* arena, int width, int height, int gridSize) {
-//     World* results = ArenaAlloc(arena, sizeof(World));
-//     results->width = width;
-//     results->height = height;
-//     results->gridSize = gridSize;
-//     results->portalCount = 0;
-//     results->portals = ArenaAlloc(arena, ROOM_MAX_PORTALS * sizeof(Portal));
-//     results->colliderGrid = ArenaAlloc(arena, results->width*sizeof(uint8_t*));
-//     results->editorGrid = ArenaAlloc(arena, results->width*sizeof(uint8_t*));
-//     results->entityData = InitECS(arena, ROOM_MAX_ENTITIES, COMPONENT_COUNT); 
-//     for(int x = 0; x < results->width; ++x) {
-//         results->colliderGrid[x] = ArenaAlloc(arena, results->height*sizeof(uint8_t));
-//         results->editorGrid[x] = ArenaAlloc(arena, results->height*sizeof(uint8_t));
-//         for(int y = 0; y < results->height; ++y) {
-//             results->colliderGrid[x][y] = 0;
-//             results->editorGrid[x][y] = 0;
-//         }
-//     }
-//     return results;
-// }
+
+World* NewWorld(Arena* arena, int width, int height, int gridSize) {
+    World* results = ArenaAlloc(arena, sizeof(World));
+    results->width = width;
+    results->height = height;
+    results->gridSize = gridSize;
+    results->roomCount = 0;
+    results->rooms = ArenaAlloc(arena, MAX_ROOMS * sizeof(Room));
+    results->colliderGrid = ArenaAlloc(arena, results->width*sizeof(uint8_t*));
+    results->editorGrid = ArenaAlloc(arena, results->width*sizeof(uint8_t*));
+    for(int x = 0; x < results->width; ++x) {
+        results->colliderGrid[x] = ArenaAlloc(arena, results->height*sizeof(uint8_t));
+        results->editorGrid[x] = ArenaAlloc(arena, results->height*sizeof(uint8_t));
+        for(int y = 0; y < results->height; ++y) {
+            results->colliderGrid[x][y] = 0;
+            results->editorGrid[x][y] = 0;
+        }
+    }
+    return results;
+}
 
 World* LoadWorld(Arena* arena, const char* file) {
     World* results = ArenaAlloc(arena, sizeof(World));
@@ -42,7 +40,7 @@ World* LoadWorld(Arena* arena, const char* file) {
         results->colliderGrid[x] = ArenaAlloc(arena, results->height*sizeof(uint8_t));
         results->editorGrid[x] = ArenaAlloc(arena, results->height*sizeof(uint8_t));
         for(int y = 0; y < results->height; ++y) {
-            fscanf(stream,"%hhx,%hhx ", &results->colliderGrid[x][y],&results->editorGrid[x][y]);
+            fscanf(stream,"%hhx,%hhx ", (uint8_t*)&results->colliderGrid[x][y],&results->editorGrid[x][y]);
         }
         fscanf(stream,"\n");
     }
@@ -88,8 +86,8 @@ void SaveWorld(World* world, const char* file) {
     fclose(stream);
 }
 
-static bool IsTileValid(uint8_t tile) {
-    return tile > 0 && tile < 16;
+static inline int IsTileValid(int tile) {
+    return (tile > 0 && tile < 16) ? 1 : 0;
 }
 
 void Autotile(World* world) {
@@ -131,32 +129,32 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
     const Vector2 bl = (Vector2){(x)*gridSize,(y+1)*gridSize};
     const Vector2 br = (Vector2){(x+1)*gridSize,(y+1)*gridSize};
     switch(value) {
-        case 1:
+        case TILE_MS_1:
             *vertexCount = 3;
             vertices[0] = left;
             vertices[1] = bottom;
             vertices[2] = bl;
             break;
-        case 2:
+        case TILE_MS_2:
             *vertexCount = 3;
             vertices[0] = right;
             vertices[1] = br;
             vertices[2] = bottom;
             break;
-        case 3:
+        case TILE_MS_3:
             *vertexCount = 4;
             vertices[0] = left;
             vertices[1] = right;
             vertices[2] = br;
             vertices[3] = bl;
             break;
-        case 4:
+        case TILE_MS_4:
             *vertexCount = 3;
             vertices[0] = top;
             vertices[1] = tr;
             vertices[2] = right;
             break;
-        case 5:
+        case TILE_MS_5:
             *vertexCount = 6;
             vertices[0] = top;
             vertices[1] = tr;
@@ -165,14 +163,14 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
             vertices[4] = bl;
             vertices[5] = left;
             break;
-        case 6:
+        case TILE_MS_6:
             *vertexCount = 4;
             vertices[0] = top;
             vertices[1] = tr;
             vertices[2] = br;
             vertices[3] = bottom;
             break;
-        case 7:
+        case TILE_MS_7:
             *vertexCount = 5;
             vertices[0] = top;
             vertices[1] = tr;
@@ -180,20 +178,20 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
             vertices[3] = bl;
             vertices[4] = left;
             break;
-        case 8:
+        case TILE_MS_8:
             *vertexCount = 3;
             vertices[0] = tl;
             vertices[1] = top;
             vertices[2] = left;
             break;
-        case 9:
+        case TILE_MS_9:
             *vertexCount = 4;
             vertices[0] = tl;
             vertices[1] = top;
             vertices[2] = bottom;
             vertices[3] = bl;
             break;
-        case 10:
+        case TILE_MS_10:
             *vertexCount = 6;
             vertices[0] = tl;
             vertices[1] = top;
@@ -202,7 +200,7 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
             vertices[4] = bottom;
             vertices[5] = left;
             break;
-        case 11:
+        case TILE_MS_11:
             *vertexCount = 5;
             vertices[0] = tl;
             vertices[1] = top;
@@ -210,14 +208,14 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
             vertices[3] = br;
             vertices[4] = bl;
             break;
-        case 12:
+        case TILE_MS_12:
             *vertexCount = 4;
             vertices[0] = tl;
             vertices[1] = tr;
             vertices[2] = right;
             vertices[3] = left;
             break;
-        case 13:
+        case TILE_MS_13:
             *vertexCount = 5;
             vertices[0] = tl;
             vertices[1] = tr;
@@ -225,7 +223,7 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
             vertices[3] = bottom;
             vertices[4] = bl;
             break;
-        case 14:
+        case TILE_MS_14:
             *vertexCount = 5;
             vertices[0] = tl;
             vertices[1] = tr;
@@ -233,14 +231,16 @@ static void MarchingSquaresPolygon(int value, float x, float y, int gridSize, Ve
             vertices[3] = br;
             vertices[4] = bottom;
             break;
-        case 15:
+        case TILE_MS_15:
             *vertexCount = 4;
             vertices[0] = tl;
             vertices[1] = tr;
             vertices[2] = br;
             vertices[3] = bl;
             break;
-
+        default:
+            *vertexCount = 0;
+            break;
     }
 }
 
