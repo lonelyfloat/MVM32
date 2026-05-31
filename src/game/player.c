@@ -25,8 +25,8 @@ const float g_SlopeWallTolerance = 1;
 
 
 void UpdatePlayerSlopes(Player* player, World* world) {
-    RayCollision2D leftRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x,player->actor.hitbox.y+player->actor.hitbox.y-20},(Vector2){0,1},world);
-    RayCollision2D rightRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x+player->actor.hitbox.x,player->actor.hitbox.y+player->actor.hitbox.y-20},(Vector2){0,1},world);
+    RayCollision2D leftRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x,player->actor.hitbox.y+player->actor.hitbox.height-20},(Vector2){0,1},world);
+    RayCollision2D rightRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x+player->actor.hitbox.width,player->actor.hitbox.y+player->actor.hitbox.height-20},(Vector2){0,1},world);
     Vector2 leftNorm = leftRaycast.normal;
     Vector2 rightNorm = rightRaycast.normal;
     bool leftValid = leftNorm.x != 0 && leftNorm.y != 0;
@@ -35,16 +35,16 @@ void UpdatePlayerSlopes(Player* player, World* world) {
     if(leftNorm.x != 0 && leftNorm.y < 0) {
         bool n = false;
         if (leftNorm.x > 0){ // left slope ascending
-            if(fabs(player->actor.hitbox.y - leftRaycast.point.y) <= player->actor.hitbox.y) {
+            if(fabs(player->actor.hitbox.y - leftRaycast.point.y) <= player->actor.hitbox.height) {
                 player->leftSlope = true;
             }
             else if(rightValid) {
-                n = fabs(rightRaycast.point.y - (player->actor.hitbox.y+player->actor.hitbox.y+player->actor.hitbox.x)) < g_SlopeSnap;
+                n = fabs(rightRaycast.point.y - (player->actor.hitbox.y+player->actor.hitbox.height+player->actor.hitbox.width)) < g_SlopeSnap;
             } else {
-                n = fabs(player->actor.hitbox.y - leftRaycast.point.y) < player->actor.hitbox.y + 10;
+                n = fabs(player->actor.hitbox.y - leftRaycast.point.y) < player->actor.hitbox.height + 10;
             }
             if(n) { // descending
-                if(fabs(player->actor.hitbox.y - leftRaycast.point.y) < player->actor.hitbox.y+player->actor.hitbox.y) {
+                if(fabs(player->actor.hitbox.y - leftRaycast.point.y) < player->actor.hitbox.height+player->actor.hitbox.height) {
                      player->leftSlope = true;
                 }
             }
@@ -60,7 +60,7 @@ void UpdatePlayerSlopes(Player* player, World* world) {
         if(fabs(player->actor.hitbox.y - leftRaycast.point.y) > 150) {
             player->leftSlope = false;
         } else {
-            player->actor.hitbox.y = leftRaycast.point.y - player->actor.hitbox.y;
+            player->actor.hitbox.y = leftRaycast.point.y - player->actor.hitbox.height;
         }
     }
     // right side
@@ -68,16 +68,16 @@ void UpdatePlayerSlopes(Player* player, World* world) {
         if(!player->leftSlope) {
             bool n = false;
             if (rightNorm.x < 0){ // right slope ascending
-                if(fabs(player->actor.hitbox.y - rightRaycast.point.y) <= player->actor.hitbox.y) {
+                if(fabs(player->actor.hitbox.y - rightRaycast.point.y) <= player->actor.hitbox.height) {
                     player->rightSlope = true;
                 }
                 else if(leftValid) {
-                    n = fabs(leftRaycast.point.y - (player->actor.hitbox.y+player->actor.hitbox.y+player->actor.hitbox.x)) < g_SlopeSnap;
+                    n = fabs(leftRaycast.point.y - (player->actor.hitbox.y+player->actor.hitbox.height+player->actor.hitbox.width)) < g_SlopeSnap;
                 } else {
-                    n = fabs(player->actor.hitbox.y - rightRaycast.point.y) < player->actor.hitbox.y + 10;
+                    n = fabs(player->actor.hitbox.y - rightRaycast.point.y) < player->actor.hitbox.height + 10;
                 }
                 if(n) { // descending
-                    if(fabs(player->actor.hitbox.y - rightRaycast.point.y) < player->actor.hitbox.y+player->actor.hitbox.y) {
+                    if(fabs(player->actor.hitbox.y - rightRaycast.point.y) < player->actor.hitbox.height+player->actor.hitbox.height) {
                          player->rightSlope = true;
                     }
                 }
@@ -94,7 +94,7 @@ void UpdatePlayerSlopes(Player* player, World* world) {
         if(fabs(player->actor.hitbox.y - rightRaycast.point.y) > 150) {
             player->rightSlope = false;
         } else {
-            player->actor.hitbox.y = rightRaycast.point.y - player->actor.hitbox.y;
+            player->actor.hitbox.y = rightRaycast.point.y - player->actor.hitbox.height;
         }
     }
 
@@ -141,8 +141,8 @@ void UpdatePlayer(Player* player, World* world) {
 
     RayCollision2D leftWallRaycast = (RayCollision2D){false, (Vector2){}, (Vector2){}};
     RayCollision2D rightWallRaycast = (RayCollision2D){false, (Vector2){}, (Vector2){}};
-    leftWallRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x,player->actor.hitbox.y+player->actor.hitbox.y/2},(Vector2){-1,0},world);
-    rightWallRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x+player->actor.hitbox.x,player->actor.hitbox.y+player->actor.hitbox.y/2},(Vector2){1,0},world);
+    leftWallRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x,player->actor.hitbox.y+player->actor.hitbox.height/2},(Vector2){-1,0},world);
+    rightWallRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x+player->actor.hitbox.width,player->actor.hitbox.y+player->actor.hitbox.height/2},(Vector2){1,0},world);
 
 
     switch(player->playerState) {
@@ -261,7 +261,7 @@ void UpdatePlayer(Player* player, World* world) {
         }
     }
     if(rightWallRaycast.hit) {
-        if(player->actor.velocity.x > 0 && fabs(rightWallRaycast.point.x - (player->actor.hitbox.x+player->actor.hitbox.x)) < g_SlopeWallTolerance) {
+        if(player->actor.velocity.x > 0 && fabs(rightWallRaycast.point.x - (player->actor.hitbox.x+player->actor.hitbox.width)) < g_SlopeWallTolerance) {
                 player->actor.velocity.x = 0;
         }
     }

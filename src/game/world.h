@@ -4,6 +4,7 @@
 #include <ecs.h>
 #include <raylib/raylib.h>
 #include "raycast.h"
+#include "types.h"
 
 typedef struct Room {
     Rectangle bounds;
@@ -44,12 +45,10 @@ World* NewWorld(Arena* arena, int width, int height, int gridSize);
 World* LoadWorld(Arena* arena, const char* file);
 void SaveWorld(World* world, const char* file);
 
-void ApplyWorld(ECS** ecs, World* world);
-
 void Autotile(World* world);
 void DrawWorldTiles(World* world, Texture2D* tileset);
 
-void ResolveWorldCollisions(ECS* ecs, World* world);
+void ResolveWorldCollisions(Actor* actor, World* world);
 
 RayCollision2D CheckCollisionRayWorld(Vector2 point, Vector2 direction, World* world);
 bool CheckCollisionPointWorld(Vector2 pt, World* world);
