@@ -3,7 +3,7 @@
 
 #include <ecs.h>
 #include <raylib/raylib.h>
-#include "room.h"
+#include "world.h"
 
 // Components & systems for IK 'nodes'
 
@@ -21,6 +21,6 @@ void ResolveIK(ECS* ecs, int iterations);
     X(float, strideLength)\
     X(bool, dir)
 
-void IKLegSystem(ECS* ecs, Room* room);
+void IKLegSystem(ECS* ecs, World* room);
 
 #endif

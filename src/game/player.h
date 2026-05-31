@@ -2,39 +2,26 @@
 #define H_PLAYER
 
 #include <raylib/raylib.h>
-#include <stdio.h>
-#include "arena.h"
-#include "serialize.h"
-#include "room.h"
-#include "component_memory.h"
-#include "ui/ui_types.h"
+#include "world.h"
+#include "types.h"
 
 typedef enum PlayerState {
     PLAYER_NORMAL, // moving around / idling
     PLAYER_CHARGING, // charging laser
     PLAYER_SHOOTING // shooting laser
 } PlayerState;
-static inline void _Load_PlayerState(FILE* stream, Arena* arena, void* value) {
-    _Load_int(stream, arena, value);
-}
-static inline void _Save_PlayerState(FILE* stream, void* value) {
-    _Save_int(stream, value);
-}
-static inline void _Allocate_PlayerState(Arena* arena, void* value) {
-    _Allocate_int(arena, value);
-}
-
-static inline void _UI_PlayerState(char* name, void* value) {
-    _UI_int(name, value);
-}
 
 typedef struct Player {
+    Actor actor;
+    Sprite sprite;
+    // Player-specific scheisse
     PlayerState playerState;
     bool canJump;
     bool jumpTrigger;
     bool grounded;
     bool leftSlope;
     bool rightSlope;
+    bool autoApply;
     Vector2 slopeDir;
     float coyoteTimer;
     float jumpBufferTimer;
@@ -44,22 +31,7 @@ typedef struct Player {
     int inputX;
 } Player;
 
+void UpdatePlayer(Player* player, World* room);
+void UpdatePlayerSlopes(Player* player, World* room);
 
-#define PLAYER(X)\
-    X(PlayerState, playerState)\
-    X(bool, canJump)\
-    X(bool, jumpTrigger)\
-    X(bool, grounded)\
-    X(bool, leftSlope)\
-    X(bool, rightSlope)\
-    X(float, coyoteTimer)\
-    X(float, jumpBufferTimer)\
-    X(float, shotDurationTimer)\
-    X(float, shootChargeTimer)\
-    X(Vector2, aimDir)\
-    X(int, inputX)\
-    X(Vector2, slopeDir)
-
-void PlayerSystem(ECS* ecs, Room* room);
-void PlayerSlopes(ECS* ecs, Room* room);
 #endif

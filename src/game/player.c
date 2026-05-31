@@ -1,6 +1,5 @@
 #include "player.h"
 #include <raylib/raymath.h>
-#include "component_types.h"
 
 // Movement  constants
 const float g_acceleration = 400;
@@ -24,15 +23,10 @@ const float g_SlopeSnap = 5;
 const float g_SlopeBoost = 5;
 const float g_SlopeWallTolerance = 1;
 
-void PlayerSlopesInternal(ECS* ecs, Entity e, Room* room) {
-    if(!HasComponents(ecs, e, 4, HITBOX_COMPONENT, VELOCITY_COMPONENT, SPRITE_COMPONENT, ACTOR_COMPONENT)) return;
-    Player* player = GetComponent(ecs, e, PLAYER_COMPONENT);
-    Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
-    Velocity* velo = GetComponent(ecs, e, VELOCITY_COMPONENT);
-    Actor* actor = GetComponent(ecs, e, ACTOR_COMPONENT);
 
-    RayCollision2D leftRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x,hb->pos.y+hb->scale.y-20},(Vector2){0,1},room);
-    RayCollision2D rightRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x+hb->scale.x,hb->pos.y+hb->scale.y-20},(Vector2){0,1},room);
+void UpdatePlayerSlopes(Player* player, World* world) {
+    RayCollision2D leftRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x,player->actor.hitbox.y+player->actor.hitbox.y-20},(Vector2){0,1},world);
+    RayCollision2D rightRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x+player->actor.hitbox.x,player->actor.hitbox.y+player->actor.hitbox.y-20},(Vector2){0,1},world);
     Vector2 leftNorm = leftRaycast.normal;
     Vector2 rightNorm = rightRaycast.normal;
     bool leftValid = leftNorm.x != 0 && leftNorm.y != 0;
@@ -41,32 +35,32 @@ void PlayerSlopesInternal(ECS* ecs, Entity e, Room* room) {
     if(leftNorm.x != 0 && leftNorm.y < 0) {
         bool n = false;
         if (leftNorm.x > 0){ // left slope ascending
-            if(fabs(hb->pos.y - leftRaycast.point.y) <= hb->scale.y) {
+            if(fabs(player->actor.hitbox.y - leftRaycast.point.y) <= player->actor.hitbox.y) {
                 player->leftSlope = true;
             }
             else if(rightValid) {
-                n = fabs(rightRaycast.point.y - (hb->pos.y+hb->scale.y+hb->scale.x)) < g_SlopeSnap;
+                n = fabs(rightRaycast.point.y - (player->actor.hitbox.y+player->actor.hitbox.y+player->actor.hitbox.x)) < g_SlopeSnap;
             } else {
-                n = fabs(hb->pos.y - leftRaycast.point.y) < hb->scale.y + 10;
+                n = fabs(player->actor.hitbox.y - leftRaycast.point.y) < player->actor.hitbox.y + 10;
             }
             if(n) { // descending
-                if(fabs(hb->pos.y - leftRaycast.point.y) < hb->scale.y+hb->scale.y) {
+                if(fabs(player->actor.hitbox.y - leftRaycast.point.y) < player->actor.hitbox.y+player->actor.hitbox.y) {
                      player->leftSlope = true;
                 }
             }
         }
     } else {
         if(player->leftSlope) {
-            // velo->x = g_SlopeBoost;
-            velo->y = 0;
+            // player->actor.velocity.x = g_SlopeBoost;
+            player->actor.velocity.y = 0;
         }
         player->leftSlope = false;
     }
     if(player->leftSlope) {
-        if(fabs(hb->pos.y - leftRaycast.point.y) > 150) {
+        if(fabs(player->actor.hitbox.y - leftRaycast.point.y) > 150) {
             player->leftSlope = false;
         } else {
-            hb->pos.y = leftRaycast.point.y - hb->scale.y;
+            player->actor.hitbox.y = leftRaycast.point.y - player->actor.hitbox.y;
         }
     }
     // right side
@@ -74,16 +68,16 @@ void PlayerSlopesInternal(ECS* ecs, Entity e, Room* room) {
         if(!player->leftSlope) {
             bool n = false;
             if (rightNorm.x < 0){ // right slope ascending
-                if(fabs(hb->pos.y - rightRaycast.point.y) <= hb->scale.y) {
+                if(fabs(player->actor.hitbox.y - rightRaycast.point.y) <= player->actor.hitbox.y) {
                     player->rightSlope = true;
                 }
                 else if(leftValid) {
-                    n = fabs(leftRaycast.point.y - (hb->pos.y+hb->scale.y+hb->scale.x)) < g_SlopeSnap;
+                    n = fabs(leftRaycast.point.y - (player->actor.hitbox.y+player->actor.hitbox.y+player->actor.hitbox.x)) < g_SlopeSnap;
                 } else {
-                    n = fabs(hb->pos.y - rightRaycast.point.y) < hb->scale.y + 10;
+                    n = fabs(player->actor.hitbox.y - rightRaycast.point.y) < player->actor.hitbox.y + 10;
                 }
                 if(n) { // descending
-                    if(fabs(hb->pos.y - rightRaycast.point.y) < hb->scale.y+hb->scale.y) {
+                    if(fabs(player->actor.hitbox.y - rightRaycast.point.y) < player->actor.hitbox.y+player->actor.hitbox.y) {
                          player->rightSlope = true;
                     }
                 }
@@ -91,53 +85,46 @@ void PlayerSlopesInternal(ECS* ecs, Entity e, Room* room) {
         }
     } else {
         if(player->rightSlope) {
-            // velo->x = g_SlopeBoost;
-            velo->y = 0;
+            // player->actor.velocity.x = g_SlopeBoost;
+            player->actor.velocity.y = 0;
         }
         player->rightSlope = false;
     }
     if(player->rightSlope) {
-        if(fabs(hb->pos.y - rightRaycast.point.y) > 150) {
+        if(fabs(player->actor.hitbox.y - rightRaycast.point.y) > 150) {
             player->rightSlope = false;
         } else {
-            hb->pos.y = rightRaycast.point.y - hb->scale.y;
+            player->actor.hitbox.y = rightRaycast.point.y - player->actor.hitbox.y;
         }
     }
 
     if(!player->leftSlope && !player->rightSlope) {
-        actor->autoApply = true;
+        player->autoApply = true;
     } else {
-        actor->autoApply = false;
+        player->autoApply = false;
     }
 
-    if(actor->impulse.y < 0) {
-        actor->autoApply = true;
+    if(player->actor.impulse.y < 0) {
+        player->autoApply = true;
     }
 }
 
 
 // End player variables and constants
-void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
-    Player* player = GetComponent(ecs, e, PLAYER_COMPONENT);
-    Hitbox* hb = GetComponent(ecs, e, HITBOX_COMPONENT);
-    Velocity* velo = GetComponent(ecs, e, VELOCITY_COMPONENT);
-    Sprite* sprite = GetComponent(ecs, e, SPRITE_COMPONENT);
-    Actor* actor = GetComponent(ecs, e, ACTOR_COMPONENT);
-    Vector2 impulse = actor->impulse;
-
+void UpdatePlayer(Player* player, World* world) {
     bool topSlope = false;
-    if(impulse.y > 0) {
-        if(impulse.x != 0) {
+    if(player->actor.impulse.y > 0) {
+        if(player->actor.impulse.x != 0) {
             topSlope = true;
         }
     }
 
-    if(!topSlope && impulse.y != 0) {
-        velo->y = 0;
+    if(!topSlope && player->actor.impulse.y != 0) {
+        player->actor.velocity.y = 0;
     }
 
     // Collision handling
-    if(impulse.y < 0 || (player->leftSlope || player->rightSlope)) {
+    if(player->actor.impulse.y < 0 || (player->leftSlope || player->rightSlope)) {
         player->grounded = true;
         player->canJump = true;
     } else {
@@ -147,15 +134,15 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
         player->grounded = false;
     }
     if((!player->leftSlope && !player->rightSlope && !player->grounded)) {
-        velo->y += g_gravity;
+        player->actor.velocity.y += g_gravity;
     }
-    velo->y = Clamp(velo->y, -g_terminalYVelo, g_terminalYVelo);
+    player->actor.velocity.y = Clamp(player->actor.velocity.y, -g_terminalYVelo, g_terminalYVelo);
 
 
     RayCollision2D leftWallRaycast = (RayCollision2D){false, (Vector2){}, (Vector2){}};
     RayCollision2D rightWallRaycast = (RayCollision2D){false, (Vector2){}, (Vector2){}};
-    leftWallRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x,hb->pos.y+hb->scale.y/2},(Vector2){-1,0},room);
-    rightWallRaycast = CheckCollisionRayRoom((Vector2){hb->pos.x+hb->scale.x,hb->pos.y+hb->scale.y/2},(Vector2){1,0},room);
+    leftWallRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x,player->actor.hitbox.y+player->actor.hitbox.y/2},(Vector2){-1,0},world);
+    rightWallRaycast = CheckCollisionRayWorld((Vector2){player->actor.hitbox.x+player->actor.hitbox.x,player->actor.hitbox.y+player->actor.hitbox.y/2},(Vector2){1,0},world);
 
 
     switch(player->playerState) {
@@ -171,13 +158,13 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
                 //  Aim Direction code
 
                 if(player->aimDir.x == 0 && player->aimDir.y == 0) {
-                    player->aimDir.x = (!sprite->flipped * 2) - 1;
+                    player->aimDir.x = (!player->sprite.flipped * 2) - 1;
                 }
 
                 player->aimDir.y = IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP);
                 if(player->aimDir.y != 0) player->inputX = 0;
                 if(player->inputX != 0) {
-                    sprite->flipped = !(player->inputX > 0);
+                    player->sprite.flipped = !(player->inputX > 0);
                     player->aimDir = (Vector2){player->inputX, 0};
                 }
                 if(player->aimDir.y != 0) player->aimDir.x = 0;
@@ -210,14 +197,14 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
                 } 
 
                 if(player->jumpTrigger) {
-                    velo->y = g_jumpVelo;
+                    player->actor.velocity.y = g_jumpVelo;
                     player->jumpTrigger = false;
                     player->leftSlope = false;
                     player->rightSlope = false;
                 }
 
-                if(IsKeyReleased(KEY_C) && velo->y < -100) {
-                    velo->y *= g_variableJumpFrac;
+                if(IsKeyReleased(KEY_C) && player->actor.velocity.y < -100) {
+                    player->actor.velocity.y *= g_variableJumpFrac;
                 }
 
 
@@ -228,8 +215,8 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
                 // if(player->leftSlope || player->rightSlope) {
                 //     horizInput = player->inputX * 0.4;
                 // }
-                velo->x += horizInput * g_acceleration;
-                velo->x = Clamp(velo->x, -g_maxSpeed, g_maxSpeed);
+                player->actor.velocity.x += horizInput * g_acceleration;
+                player->actor.velocity.x = Clamp(player->actor.velocity.x, -g_maxSpeed, g_maxSpeed);
             }
             break;
         case PLAYER_CHARGING: 
@@ -251,7 +238,7 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
             if(player->shotDurationTimer > 0) {
                 player->shotDurationTimer -= GetFrameTime();
                 Vector2 playerKnockback = Vector2Scale(Vector2Negate(player->aimDir),g_shootKnockback);
-                *velo = Vector2Add(playerKnockback, *velo);
+                player->actor.velocity = Vector2Add(playerKnockback, player->actor.velocity);
             } else {
                 player->playerState = PLAYER_NORMAL;
                 player->shotDurationTimer = -1;
@@ -262,96 +249,30 @@ void UpdatePlayer(ECS* ecs, Entity e, Room* room) {
     }
     if(player->inputX == 0) {
         if(player->grounded) {
-            velo->x *= g_groundFriction;
+            player->actor.velocity.x *= g_groundFriction;
         } else {
-            velo->x *= g_airResistance;
+            player->actor.velocity.x *= g_airResistance;
         }
     }
 
     if(leftWallRaycast.hit) {
-        if(velo->x < 0 && fabs(leftWallRaycast.point.x - hb->pos.x) < g_SlopeWallTolerance) {
-                velo->x = 0;
+        if(player->actor.velocity.x < 0 && fabs(leftWallRaycast.point.x - player->actor.hitbox.x) < g_SlopeWallTolerance) {
+                player->actor.velocity.x = 0;
         }
     }
     if(rightWallRaycast.hit) {
-        if(velo->x > 0 && fabs(rightWallRaycast.point.x - (hb->pos.x+hb->scale.x)) < g_SlopeWallTolerance) {
-                velo->x = 0;
+        if(player->actor.velocity.x > 0 && fabs(rightWallRaycast.point.x - (player->actor.hitbox.x+player->actor.hitbox.x)) < g_SlopeWallTolerance) {
+                player->actor.velocity.x = 0;
         }
     }
     if(topSlope) {
         if(player->inputX == 0) {
-            velo->x = 0;
-            velo->y = g_gravity;
+            player->actor.velocity.x = 0;
+            player->actor.velocity.y = g_gravity;
         } else {
-            velo->y = (impulse.y/fabs(impulse.x)) * fabs(velo->x); 
-            *velo = Vector2Scale(Vector2Normalize(*velo), fabs(velo->x));
+            player->actor.velocity.y = (player->actor.impulse.y/fabs(player->actor.impulse.x)) * fabs(player->actor.velocity.x); 
+            player->actor.velocity = Vector2Scale(Vector2Normalize(player->actor.velocity), fabs(player->actor.velocity.x));
         }
     }
     
 }
-
-void PlayerSystem(ECS* ecs, Room* room) {
-    for(int i = 0; i < ecs->blocks[PLAYER_COMPONENT].count; ++i) {
-        Entity e = GetEntity(ecs, PLAYER_COMPONENT, i);
-        if(!HasComponents(ecs, e, 4, HITBOX_COMPONENT, VELOCITY_COMPONENT, SPRITE_COMPONENT, ACTOR_COMPONENT)) continue;
-        UpdatePlayer(ecs, e, room);
-    }
-}
-
-void PlayerSlopes(ECS* ecs, Room* room) {
-    for(int i = 0; i < ecs->blocks[PLAYER_COMPONENT].count; ++i) {
-        Entity e = GetEntity(ecs, PLAYER_COMPONENT, i);
-        if(!HasComponents(ecs, e, 4, HITBOX_COMPONENT, VELOCITY_COMPONENT, SPRITE_COMPONENT, ACTOR_COMPONENT)) continue;
-        PlayerSlopesInternal(ecs,e,room);
-        Hitbox* playerH = GetComponent(ecs, e, HITBOX_COMPONENT);
-        Sprite* playerS = GetComponent(ecs, e, SPRITE_COMPONENT);
-        // update leg positions
-        if(!HasComponent(ecs, e, RELATIONSHIP_COMPONENT)) continue;
-        Relationship* r = GetComponent(ecs, e, RELATIONSHIP_COMPONENT);
-        Entity child = r->first;
-        while(child != NULL_ENTITY) {
-            if(!HasComponent(ecs, child, RELATIONSHIP_COMPONENT)) break;
-            r = GetComponent(ecs, child, RELATIONSHIP_COMPONENT);
-            if(!HasComponents(ecs, child,3, HITBOX_COMPONENT, OFFSET_COMPONENT, IK_POLE_COMPONENT)) {
-                child = r->next;
-                continue;
-            }
-            Offset* o = GetComponent(ecs, child, OFFSET_COMPONENT);
-            Hitbox* hb = GetComponent(ecs, child, HITBOX_COMPONENT);
-            IKPole* p = GetComponent(ecs, child, IK_POLE_COMPONENT);
-            hb->pos = Vector2Add(playerH->pos, *o);
-            if(HasComponent(ecs, child, IK_LEG_COMPONENT)) {
-                p->x = playerS->flipped ? -1 : 1;
-            } else {
-                p->x = playerS->flipped ? 1 : -1;
-            }
-            child = r->next;
-        }
-    }
-}
-
-// FORMER CODE
-//
-//     if(impulse.x != 0) {
-//         // Top corner rounding
-//         if(fabs(staticRecs[i].y - (player.y + player.height)) < cornerTolerance && playerVelo.y > 0) {
-//             player.y = staticRecs[i].y - player.height;
-//         }
-//         else {
-//             playerVelo.x = 0;
-//         }
-//     }
-// 
-//     if(impulse.y != 0) {
-//         // Bottom corner rounding
-//         bool cornerLeft = fabs((player.x + player.width) - staticRecs[i].x) < cornerTolerance;
-//         bool cornerRight = fabs(player.x - (staticRecs[i].x + staticRecs[i].width)) < cornerTolerance;
-//         if(playerVelo.y < 0 && cornerLeft) {
-//             player.x = staticRecs[i].x - player.width;
-//         }
-//         else if(playerVelo.y < 0 && cornerRight) {
-//             player.x = staticRecs[i].x + staticRecs[i].width;
-//         } else {
-//             playerVelo.y = 0;
-//         }
-//     }

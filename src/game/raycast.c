@@ -1,7 +1,4 @@
 #include "raycast.h"
-#include "ui/raylib_ui.h"
-#include "ui/ui.h"
-#include <stdio.h>
 #include <raylib/raymath.h>
 
 RayCollision2D CheckCollisionRayLine(Vector2 point, Vector2 dir, Vector2 startPos, Vector2 endPos) {
@@ -16,12 +13,3 @@ RayCollision2D CheckCollisionRayLine(Vector2 point, Vector2 dir, Vector2 startPo
     Vector2 normal = (Vector2){v3.y,-v3.x};
     return (RayCollision2D){true, pt, normal};
 }
-
-#define XT(X)\
-    X(Vector2, point)\
-    X(Vector2, normal)\
-    X(bool, hit)\
-
-UI_GEN_NORM(RayCollision2D, XT)
-SERIALIZE_GEN_(RayCollision2D, XT)
-_PRIM_ALLOCATOR(RayCollision2D)
