@@ -18,7 +18,8 @@ void ResolveIK(ECS* ecs, int iterations);
 
 #define IK_LEG(X)\
     X(float, xOffset)\
-    X(float, strideLength)
+    X(float, strideLength)\
+    X(bool, dir)
 
 void IKLegSystem(ECS* ecs, Room* room);
 

@@ -296,30 +296,11 @@ void UpdateDrawFrame(void) {
     if(!editorEnabled) {
         PlayerSystem(ecs, currentRoom);
         VelocitySystem(ecs);
-
-        for(int i = 0; i < ecs->blocks[IK_POLE_COMPONENT].count; ++i) {
-            Entity e = GetEntity(ecs, IK_POLE_COMPONENT, i);
-            IKPole pole = IndexComponent(ecs, IKPole, IK_POLE_COMPONENT, i);
-            if(!HasComponents(ecs, e, 2, IK_ROOT_COMPONENT, RELATIONSHIP_COMPONENT)) continue;
-            Relationship* r = GetComponent(ecs, e, RELATIONSHIP_COMPONENT);
-            Entity child = r->first;
-            while(child != NULL_ENTITY) {
-                if(!HasComponent(ecs, child, RELATIONSHIP_COMPONENT)) break;
-                r = GetComponent(ecs, child, RELATIONSHIP_COMPONENT);
-                if(!HasComponents(ecs, child,2, HITBOX_COMPONENT, IK_NODE_COMPONENT)) {
-                    child = r->next;
-                    continue;
-                }
-                Hitbox* hb = GetComponent(ecs, child, HITBOX_COMPONENT);
-                hb->pos = Vector2Add(hb->pos, Vector2Scale(pole, 20));
-                child = r->next;
-            }
-        }
+        IKPoleSystem(ecs);
         IKLegSystem(ecs,currentRoom);
         ResolveIK(ecs,100);
         ResolveRoomCollisions(ecs, currentRoom);
         PlayerSlopes(ecs, currentRoom);
-
     }
     if(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L)) {
         sprintf(roomName, "./assets/rooms/room%d",roomID);

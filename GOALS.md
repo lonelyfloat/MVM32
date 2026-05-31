@@ -1,22 +1,29 @@
 # TODO (asap): 
-- Fix weird prefab problem
 - Make player able to traverse The World
+- Make utility to make adding IK limbs to stuff less of a PITA
 
-# List of everything I NEED to do (MVP):
+# List of everything I NEED to do / Info (MVP):
 ## Design
 - Setting considerations - where is this taking place
+    - Abandoned plant laboratory
 - Create outline of a story/narrative (who are you, what are you doing here, etc..)
-- Design the world (macro scale - what broadly goes where from setting)
-    - AT LEAST 1 'biome'
+    - Explorer who fell through a roof and got trapped here
+- Design the world (macro scale - what broadly goes where from setting) 
+    - AT LEAST 1 'biome' -> Lab
 - Create the world (literally) - try for at least 10 rooms of varying sizes / shapes / challenges
-- Design 3 enemy types & their "health puzzles"
+    - see inkscape file
 - Design boss (at least 2 'stages')
-- Abilities --> Hover & 'Drill'
+- Broad gameplay goals 
+    - With 'Gene Splicing' mode of the gun, shooting enemies weakens them, making them slower and more docile until they become temporarily dormant
+- Abilities --> Hover & 'Shrink Ray'
+- At least 3 enemies
+    - Ambush ceiling clinging enemy
 ## Art
-- Player body and gun (IK arms & legs)
+- Player body (IK arms & legs) (DONE)
+- Gun
 - Assets for 3 enemies
 - Boss assets
-- AT LEAST 1 tileset (squares, 45-45-90 triangles, 30-60-90 triangles)
+- AT LEAST 1 tileset (squares, 45-45-90 triangles) DONE
 - Spike / "this tile hurts you" asset
 - Room backgrounds (parallax?) 
 ## Music
@@ -30,14 +37,14 @@
     - Leg IK (MOSTLY DONE)
         - Raycasting (MOSTLY DONE)
     - Player Arm IK (for the gun)
-- Rudimentary dialogue box system 
-- Enemy "health puzzle" system
 - Enemy AI system (state machines, etc.)
 - Program ability aquisition states
+- Camera system
 - ImGui 
     - load/save to and from specific files in a menu
     - Room / level creation utilities (door 'portals' etc.) DONE
 - Asset integration of art, music, sfx, etc.
+- upgrade mechanisms for Hover and Drill
 
 # Nice to haves
 - Controller support (prize incentive)

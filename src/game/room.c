@@ -383,3 +383,18 @@ RayCollision2D CheckCollisionRayRoom(Vector2 point, Vector2 direction, Room* roo
     }
     return result;
 }
+
+bool CheckCollisionPointRoom(Vector2 pt, Room* room) {
+    int gridSize = room->gridSize;
+    Vector2 points[6];
+    int pointsCount;
+    for (int x = 0; x < room->width; ++x) {
+        for (int y = 0; y < room->height; ++y) {
+            if(room->colliderGrid[x][y] == 0) continue;
+            MarchingSquaresPolygon(room->colliderGrid[x][y], x+0.5,y+0.5,gridSize,points, &pointsCount);
+            if(CheckCollisionPointPoly(pt, points, pointsCount)) return true;
+
+        }
+    }
+    return false;
+}

@@ -5,7 +5,7 @@
 
 void VelocitySystem(ECS* ecs);
 void CollisionSystem(ECS* ecs);
-
+void IKPoleSystem(ECS *ecs);
 void SetRenderOrder(ECS* ecs);
 
 #endif

@@ -36,6 +36,7 @@ void DrawRoomTiles(Room* room, Texture2D* tileset);
 
 void ResolveRoomCollisions(ECS* ecs, Room* room);
 RayCollision2D CheckCollisionRayRoom(Vector2 point, Vector2 direction, Room* room);
+bool CheckCollisionPointRoom(Vector2 pt, Room* room);
 
 /* Format:
 %x ; gridSize

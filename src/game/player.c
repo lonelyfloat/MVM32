@@ -4,7 +4,7 @@
 
 // Movement  constants
 const float g_acceleration = 400;
-const float g_maxSpeed = 300;
+const float g_maxSpeed = 275;
 const float g_groundFriction = 0.7;
 const float g_airResistance = 0.7;
 const float g_gravity = 40;
@@ -312,7 +312,7 @@ void PlayerSlopes(ECS* ecs, Room* room) {
         while(child != NULL_ENTITY) {
             if(!HasComponent(ecs, child, RELATIONSHIP_COMPONENT)) break;
             r = GetComponent(ecs, child, RELATIONSHIP_COMPONENT);
-            if(!HasComponents(ecs, child,4, HITBOX_COMPONENT, IK_LEG_COMPONENT, OFFSET_COMPONENT, IK_POLE_COMPONENT)) {
+            if(!HasComponents(ecs, child,3, HITBOX_COMPONENT, OFFSET_COMPONENT, IK_POLE_COMPONENT)) {
                 child = r->next;
                 continue;
             }
@@ -320,7 +320,11 @@ void PlayerSlopes(ECS* ecs, Room* room) {
             Hitbox* hb = GetComponent(ecs, child, HITBOX_COMPONENT);
             IKPole* p = GetComponent(ecs, child, IK_POLE_COMPONENT);
             hb->pos = Vector2Add(playerH->pos, *o);
-            p->x = playerS->flipped ? -1 : 1;
+            if(HasComponent(ecs, child, IK_LEG_COMPONENT)) {
+                p->x = playerS->flipped ? -1 : 1;
+            } else {
+                p->x = playerS->flipped ? 1 : -1;
+            }
             child = r->next;
         }
     }
